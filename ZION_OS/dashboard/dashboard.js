@@ -306,10 +306,10 @@ function switchTab(name){
   if(['l1','l2','l3','l4','l5','l6'].includes(name)) loadLayerFull(name);
   if(name === 'launch-day'){ loadLaunchDayStatus(); if(typeof startLaunchCountdown==='function') startLaunchCountdown(); loadGenesisBackupList(); }
   if(name === 'orchestrator'){ refreshOrchestrator(); }
-  if(name === 'marketplace-orders' || name === 'marketplace-invoices' || name === 'marketplace-shipping' || name === 'marketplace-stripe'){
-    const c = document.getElementById('pane-' + name);
-    if(c) c.innerHTML = '<div class="zion-panel p-8 text-center text-gray-400"><div class="text-3xl mb-3"><i class="fas fa-shopping-bag"></i></div><h3 class="text-lg font-bold text-white mb-2">Marketplace</h3><p>This section will be available once the OASIS Marketplace service is deployed.</p><div class="text-xs text-gray-500 mt-2">Service not yet deployed</div></div>';
-  }
+  // Marketplace admin tabs: the pane itself explains that market has its own
+  // login (SameSite cookies never reach an iframe from another origin). This
+  // used to overwrite the pane with a "Service not yet deployed" placeholder,
+  // which was untrue — market. has been live since the 3.3 flip (2026-11-18).
   if(name === 'ncl-jobs'){ if(typeof loadNclJobsPanel === 'function') loadNclJobsPanel(); }
   if(name === 'poc-lab'){ if(typeof pocCheckStatus === 'function') pocCheckStatus(); }
   if(name === 'agent'){ if(typeof refreshAgentPanel === 'function') refreshAgentPanel(); }
@@ -2745,6 +2745,31 @@ function updateResourceBars(res){
 
 let alertCache = [];
 let alertFilterActive = 'all';
+let alertWindowHours = 24;   // 0 = vše; okno drží čísla ve shodě s aktuálním stavem
+
+function _alertInWindow(a){
+  if(!alertWindowHours) return true;
+  const ts = Date.parse(a.ts || '');
+  if(!ts) return false;
+  return (Date.now() - ts) <= alertWindowHours * 3600 * 1000;
+}
+
+function _alertWindowCache(){
+  return alertCache.filter(_alertInWindow);
+}
+
+function setAlertWindow(hours){
+  alertWindowHours = Number(hours) || 0;
+  document.querySelectorAll('.alert-window-btn').forEach(b => {
+    const on = Number(b.dataset.window) === alertWindowHours;
+    b.className = 'alert-window-btn text-[10px] px-2.5 py-1 rounded ' +
+      (on ? 'bg-emerald-900/30 text-emerald-300 border border-emerald-500/30'
+          : 'bg-black/30 text-gray-400 hover:text-white');
+  });
+  const label = document.getElementById('alert-window-label');
+  if(label) label.textContent = alertWindowHours ? 'okno: posledních ' + (alertWindowHours >= 24 ? (alertWindowHours/24) + ' d' : alertWindowHours + ' h') : 'okno: vše';
+  loadAlertHistory();
+}
 let _alertsTimer = null;
 let _backupsTimer = null;
 let walletsCache = [];
@@ -2753,14 +2778,22 @@ async function loadAlertHistory(){
   try {
     const res = await fetch('/api/alerts/history').then(r => r.json());
     alertCache = (res.alerts || []).slice().reverse();
-    // Update counts
+    // Counts follow the selected time window so the cards never show
+    // historical incidents next to "All systems nominal" (2026-11-18).
+    const visible = _alertWindowCache();
     const counts = {critical:0, warning:0, info:0};
-    alertCache.forEach(a => { if(counts[a.severity] !== undefined) counts[a.severity]++; else counts.info++; });
+    visible.forEach(a => { if(counts[a.severity] !== undefined) counts[a.severity]++; else counts.info++; });
     const el = id => document.getElementById(id);
     if(el('alert-count-critical')) el('alert-count-critical').textContent = counts.critical;
     if(el('alert-count-warning')) el('alert-count-warning').textContent = counts.warning;
     if(el('alert-count-info')) el('alert-count-info').textContent = counts.info;
-    if(el('alert-count-total')) el('alert-count-total').textContent = alertCache.length;
+    if(el('alert-count-total')) el('alert-count-total').textContent = visible.length;
+    if(el('alert-window-note')){
+      const histCritical = alertCache.filter(a => a.severity === 'critical').length;
+      el('alert-window-note').textContent = alertWindowHours
+        ? 'historicky celkem: ' + alertCache.length + ' záznamů · ' + histCritical + ' critical'
+        : '';
+    }
     // Update sidebar badge
     const sidebarBtn = document.getElementById('tab-alerts');
     if(sidebarBtn){
@@ -2795,9 +2828,9 @@ function filterAlerts(filter){
 function renderAlertList(){
   const c = document.getElementById('alert-history-list');
   if(!c) return;
-  const filtered = alertFilterActive === 'all' ? alertCache : alertCache.filter(a => a.severity === alertFilterActive);
+  const filtered = (alertFilterActive === 'all' ? _alertWindowCache() : _alertWindowCache().filter(a => a.severity === alertFilterActive));
   if(!filtered.length){
-    c.innerHTML = '<div class="text-gray-500 italic text-sm">No ' + (alertFilterActive==='all'?'':''+alertFilterActive+' ') + 'alerts recorded.</div>';
+    c.innerHTML = '<div class="text-gray-500 italic text-sm">No ' + (alertFilterActive==='all'?'':''+alertFilterActive+' ') + 'alerts recorded' + (alertWindowHours ? ' in the last ' + (alertWindowHours >= 24 ? (alertWindowHours/24) + 'd' : alertWindowHours + 'h') : '') + '.</div>';
     return;
   }
   const icons = { critical: '🚨', warning: '⚠️', info: 'ℹ️', success: '✅' };
@@ -13918,12 +13951,14 @@ let _rigsView = 'fleet';
 function rigsReload(){
   if(_rigsView === 'market') loadMarket();
   else if(_rigsView === 'ai') loadAi();
+  else if(_rigsView === 'agents') loadAgentsView();
+  else if(_rigsView === 'alerts') loadFleetAlerts();
   else loadRigs();
 }
 
 function rigsView(name){
   _rigsView = name;
-  ['fleet', 'market', 'ai'].forEach(v => {
+  ['fleet', 'market', 'ai', 'agents', 'alerts'].forEach(v => {
     const el = document.getElementById('rigs-view-' + v);
     if(el) el.classList.toggle('hidden', v !== name);
     const btn = document.getElementById('rigs-nav-' + v);
@@ -13935,6 +13970,133 @@ function rigsView(name){
     }
   });
   rigsReload();
+}
+
+// ── Fleet agenti (vastctl agent registry) ──────────────────────────────────
+async function loadAgentsView(){
+  const box = document.getElementById('agents-body');
+  const badge = document.getElementById('agents-badge');
+  if(!box) return;
+  box.innerHTML = '<div class="text-xs text-gray-500">Načítám registry agentů…</div>';
+  try{
+    const d = await fetch('/api/ops/agents', { cache: 'no-store' }).then(r => r.json());
+    if(!d || d.ok === false){
+      box.innerHTML = '<div class="text-xs text-amber-300">' + escapeHtml((d && d.error) || 'registry nedostupný') + '</div>';
+      if(badge){ badge.textContent = 'nedostupné'; badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-red-500/15 border border-red-500/40 text-red-300'; }
+      return;
+    }
+    const agents = d.agents || [];
+    if(badge){
+      const ok = d.stale === 0;
+      badge.textContent = d.live + '/' + d.count + ' live · heartbeat ≤ ' + d.stale_after_s + ' s';
+      badge.className = 'text-[10px] px-2 py-0.5 rounded-full border ' +
+        (ok ? 'bg-emerald-500/15 border-emerald-500/40 text-emerald-300'
+            : 'bg-amber-500/15 border-amber-500/40 text-amber-300');
+    }
+    if(!agents.length){
+      box.innerHTML = '<div class="text-xs text-gray-500">Žádný agent není zaregistrovaný — rig se musí enrollovat přes <code class="text-gray-300">deploy-agent-ingress.sh</code>.</div>';
+      return;
+    }
+    box.innerHTML = `
+      <div class="overflow-auto">
+        <table class="w-full text-xs">
+          <thead><tr class="text-[10px] uppercase tracking-wider text-gray-500 border-b border-white/10">
+            <th class="text-left py-2 px-2">Rig</th>
+            <th class="text-left py-2 px-2">Hostname</th>
+            <th class="text-left py-2 px-2">Stav</th>
+            <th class="text-right py-2 px-2">Heartbeat</th>
+            <th class="text-left py-2 px-2">Skupina / desired</th>
+            <th class="text-left py-2 px-2">Poslední sheet</th>
+          </tr></thead>
+          <tbody>
+          ${agents.map(a => {
+            const dot = a.live ? 'bg-emerald-400' : 'bg-red-500';
+            const txt = a.live ? 'text-emerald-300' : 'text-red-300';
+            const sheet = a.applied_sheet || {};
+            const sheetOut = (sheet.out || '').split('\n').filter(Boolean).slice(-1)[0] || '—';
+            return `<tr class="border-b border-white/5 hover:bg-white/5">
+              <td class="py-2 px-2 font-mono text-white">${escapeHtml(String(a.rig_id || '—'))}</td>
+              <td class="py-2 px-2 text-gray-300 font-mono">${escapeHtml(String(a.hostname || '—'))}</td>
+              <td class="py-2 px-2"><span class="inline-flex items-center gap-1.5 ${txt}"><span class="w-2 h-2 rounded-full ${dot}"></span>${a.live ? 'live' : 'stale'}${a.enrolled ? '' : ' · neenrollován'}</span></td>
+              <td class="py-2 px-2 text-right font-mono ${txt}">${a.age_s != null ? _agoSeconds(a.age_s) : '—'}</td>
+              <td class="py-2 px-2 text-gray-400">${escapeHtml(String(a.group || '—'))} / ${escapeHtml(String(a.desired || '—'))}</td>
+              <td class="py-2 px-2 text-gray-500 text-[10px]" title="${escapeHtml(String(sheet.out || ''))}">${escapeHtml(sheetOut.slice(0, 70))}</td>
+            </tr>`;
+          }).join('')}
+          </tbody>
+        </table>
+      </div>
+      <div class="text-[10px] text-gray-500 mt-2">
+        Zdroj: <code class="text-gray-400">vastctl /api/agent/fleet</code> ·
+        registry <code class="text-gray-400">/root/.local/share/vastctl-agents.json</code>
+      </div>`;
+  }catch(e){
+    box.innerHTML = '<div class="text-xs text-red-300">Agent registry unreachable — ' + escapeHtml(String(e)) + '</div>';
+  }
+}
+
+function _agoSeconds(secs){
+  const s = Math.max(0, Math.round(Number(secs) || 0));
+  if(s < 60) return s + ' s';
+  if(s < 3600) return Math.floor(s / 60) + ' min';
+  if(s < 86400) return Math.floor(s / 3600) + ' h';
+  return Math.floor(s / 86400) + ' d';
+}
+
+// ── Fleet alerty (vastctl alert routing) ───────────────────────────────────
+async function loadFleetAlerts(){
+  const box = document.getElementById('fleet-alerts-body');
+  const badge = document.getElementById('fleet-alerts-badge');
+  if(!box) return;
+  box.innerHTML = '<div class="text-xs text-gray-500">Načítám alert routing…</div>';
+  try{
+    const d = await fetch('/api/ops/alerts', { cache: 'no-store' }).then(r => r.json());
+    if(!d || d.ok === false){
+      const msg = d && d.needs_token
+        ? 'vastctl tento endpoint odmítl — chybí ops token (X-Ops-Auth) na :8088.'
+        : ((d && d.error) || 'alert routing nedostupný');
+      box.innerHTML = '<div class="text-xs text-amber-300">' + escapeHtml(msg) + '</div>';
+      if(badge){ badge.textContent = 'nedostupné'; badge.className = 'text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/40 text-amber-300'; }
+      return;
+    }
+    const channels = d.channels || d.routes || d.targets || [];
+    const enabled = d.enabled !== false;
+    if(badge){
+      // `channels: 0` means vastctl has no alert channel configured at all —
+      // saying "zapnuto" there would be a lie (2026-11-18).
+      const n = Array.isArray(channels) ? channels.length : Number(d.channels || 0);
+      if(!enabled){
+        badge.textContent = 'vypnuto';
+        badge.className = 'text-[10px] px-2 py-0.5 rounded-full border bg-gray-500/15 border-gray-500/40 text-gray-300';
+      } else if(n === 0){
+        badge.textContent = '0 kanálů';
+        badge.className = 'text-[10px] px-2 py-0.5 rounded-full border bg-amber-500/15 border-amber-500/40 text-amber-300';
+      } else {
+        badge.textContent = n + ' kanálů';
+        badge.className = 'text-[10px] px-2 py-0.5 rounded-full border bg-emerald-500/15 border-emerald-500/40 text-emerald-300';
+      }
+    }
+    let html = '';
+    if(Array.isArray(channels) && channels.length){
+      html += `<div class="grid grid-cols-1 md:grid-cols-2 gap-2 mb-3">` + channels.map(c => {
+        const name = c.name || c.channel || c.kind || '—';
+        const on = c.enabled !== false;
+        return `<div class="bg-black/30 rounded-lg p-2 border border-white/5">
+          <div class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full ${on ? 'bg-emerald-400' : 'bg-gray-500'}"></span>
+            <span class="text-xs font-semibold text-white">${escapeHtml(String(name))}</span>
+            <span class="text-[10px] text-gray-500 ml-auto">${escapeHtml(String(c.type || c.kind || ''))}</span>
+          </div>
+          <div class="text-[10px] text-gray-500 mt-1 break-all">${escapeHtml(String(c.target || c.url || c.host || c.to || ''))}</div>
+        </div>`;
+      }).join('') + '</div>';
+    }
+    html += '<pre class="max-h-72 overflow-auto rounded-lg bg-black/50 border border-white/10 p-3 text-[10px] leading-relaxed text-gray-400 whitespace-pre-wrap">' +
+      escapeHtml(JSON.stringify(d, null, 2).slice(0, 6000)) + '</pre>';
+    box.innerHTML = html;
+  }catch(e){
+    box.innerHTML = '<div class="text-xs text-red-300">Alert routing unreachable — ' + escapeHtml(String(e)) + '</div>';
+  }
 }
 
 // ── GPU market ──────────────────────────────────────────────────────────────

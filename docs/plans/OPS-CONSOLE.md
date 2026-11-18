@@ -93,11 +93,30 @@ Cache: snapshot 10 s, pool 15 s. Každé volání má timeout; modul nikdy nesho
 4. ~~Akce s následky chtějí potvrzení + audit~~ → **hotové (F2.1)**: `POST /api/ops/action` zapisuje
    každou akci do `/opt/zion/data/dashboard-ops-audit.jsonl` (best-effort, nikdy neblokuje) a
    záložka Fleet má kartu **Audit akcí**.
-5. **Alerty**: `vastctl serve` má `/api/alerts/*`; napojit na existující Alerts tab.
+5. ~~**Alerty**: `vastctl serve` má `/api/alerts/*`; napojit na existující Alerts tab.~~
+   → **hotové (F2.4, 2026-11-18)**: nová pod-záložka **`Rigs → Alerty`** čte
+   `GET /api/ops/alerts` (proxy na `vastctl /api/alerts/status`). Endpoint je ops-only,
+   takže `ops_console._http()` přidává `X-Ops-Auth: 1` — server-side, z trusted localhostu,
+   stejný pattern, jaký používá nginx po basic auth (klient tuhle hlavičku neposílá).
+   Badge rozlišuje `0 kanálů` (vastctl alerting není nakonfigurovaný) od `vypnuto`/`N kanálů`.
+   Infrastrukturní alerty (G8, pool, služby) zůstávají v záložce **Alerts** — ta má nově
+   **časové okno 24 h / 7 d / vše**, takže čísla neukazují historické incidenty vedle
+   „All systems nominal" (default 24 h + řádek „historicky celkem N záznamů").
+   **Stav vastctl alertingu k 18. 11.:** `channels: 0` — telegram ani webhook nejsou nakonfigurované.
+5. ~~**Agenti**: registry agentů v UI~~ → **hotové (F2.4)**: pod-záložka **`Rigs → Agenti`**
+   (`GET /api/ops/agents`) — tabulka rigů s `heartbeat age`, `live/stale` (práh
+   `OPS_AGENT_STALE_S`, default 180 s), skupina/desired, poslední aplikovaný sheet.
+   **Nález 18. 11.:** jediný registrovaný agent (`58077390`) je **stale 17 dní** — heartbeat
+   naposledy 29. 10.; rig je pryč nebo je dole ingress. UI to teď ukáže na první pohled.
+9. **Latence marketu**: dotaz na offers trvá 5–15 s (vast.ai API); UI proto počítá sekundy a
+   `/api/ops/market` má 40s timeout. → **hotové (F2.4)**: server-side cache 60 s
+   (`OPS_MARKET_TTL`), odpověď nese `cached: true`; opakované hledání je zdarma.
 6. **Retire prototypu** `/vast-rigs` — až bude F2 hotová, smazat (a `/vast-ops` proxy + PC tunely).
 7. **SMOS**: `ZionRig` je offline (samostatný problém, viz AGENTS).
-8. **Latence marketu**: dotaz na offers trvá 5–15 s (vast.ai API); UI proto počítá sekundy a
-   `/api/ops/market` má 40s timeout. Zvážit server-side cache 60 s, aby opakované hledání bylo zdarma.
+8. ~~**Latence marketu**: dotaz na offers trvá 5–15 s (vast.ai API); UI proto počítá sekundy a
+   `/api/ops/market` má 40s timeout. Zvážit server-side cache 60 s, aby opakované hledání bylo zdarma.~~
+   → **hotové (F2.4, 2026-11-18)**: server-side cache 60 s (`OPS_MARKET_TTL`), odpověď nese
+   `cached: true`; opakované hledání je zdarma.
 9. ~~**EDGE nemá GPU → inference musí na vast**~~ → **hotové (F2.2)**: `POST /api/ops/provision`
    (background job + `GET /api/ops/job?id=`) rozhodne: model už běží → nic; existuje GPU rig →
    nasaď tam (nula nákladů); nic neběží → pronajmi nejlevnější offer pod `OPS_PROVISION_MAX_DPH`
@@ -106,13 +125,15 @@ Cache: snapshot 10 s, pool 15 s. Každé volání má timeout; modul nikdy nesho
 
 ## 5b. F2.1 — co přibylo v UI
 
-`Rigs` má tři pod-záložky (jedno místo, žádná nová top-level položka v menu):
+`Rigs` má pět pod-záložek (jedno místo, žádná nová top-level položka v menu):
 
 | Pod-záložka | Obsah |
 |---|---|
 | **Fleet** | KPI, tabulka rigů (rozbalení = minery + akce), pool top workery, Zdrojе, **Audit akcí** |
-| **GPU market** | filtr GPU + max $/h, nabídky od nejlevnější ($/h, $/den, reliability, CUDA, RAM, disk, net), **Rent** = confirm + přepsání `RENT` |
+| **GPU market** | filtr GPU + max $/h, nabídky od nejlevnější ($/h, $/den, reliability, CUDA, RAM, disk, net), **Rent** = confirm + přepsání `RENT` (cache 60 s) |
 | **AI inference** | stav inference per rig (VRAM bar, modely, util/temp/W), katalog modelů (internal = llama.cpp, ostatní deploy), chat s výběrem endpointu |
+| **Agenti** (F2.4) | registry fleet agentů: rig_id, hostname, `live/stale` dle stáří heartbeatu (práh `OPS_AGENT_STALE_S`, default 180 s), skupina/desired, poslední aplikovaný sheet |
+| **Alerty** (F2.4) | routing alertů vastctl (`/api/alerts/status`): kanály, příjemci, `0 kanálů` = alerting není nakonfigurovaný |
 
 Akce jdou výhradně přes `POST /api/ops/action` (whitelist) — `rent`, `launch`, `stop`, `exec`,
 `inference/*`, `smos/*`. Každá se zapíše do auditu (kdo/odkud, parametry, ok/http).

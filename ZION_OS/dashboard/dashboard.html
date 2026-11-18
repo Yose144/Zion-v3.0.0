@@ -4887,9 +4887,19 @@ BTCUNLOCK_COORD_TOKEN=&lt;token&gt; python3 BTCunlock/btcunlock-worker.py \
     <div class="flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold text-gradient">🚨 Alert History</h1>
-        <p class="text-xs text-gray-400 mt-1">Auto-detected issues across all layers</p>
+        <p class="text-xs text-gray-400 mt-1">Auto-detected issues across all layers <span id="alert-window-note" class="text-gray-600"></span></p>
       </div>
       <button onclick="loadAlertHistory()" class="text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg transition">⟳ Refresh</button>
+    </div>
+
+    <!-- Time window: counts must match "is something wrong now" -->
+    <div class="flex items-center gap-2 flex-wrap">
+      <span id="alert-window-label" class="text-[10px] uppercase tracking-wider text-gray-500">okno: posledních 1 d</span>
+      <div class="flex gap-1">
+        <button onclick="setAlertWindow(24)" data-window="24" class="alert-window-btn text-[10px] px-2.5 py-1 rounded bg-emerald-900/30 text-emerald-300 border border-emerald-500/30">24 h</button>
+        <button onclick="setAlertWindow(168)" data-window="168" class="alert-window-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400 hover:text-white">7 d</button>
+        <button onclick="setAlertWindow(0)" data-window="0" class="alert-window-btn text-[10px] px-2.5 py-1 rounded bg-black/30 text-gray-400 hover:text-white">Vše</button>
+      </div>
     </div>
 
     <!-- Alert summary cards -->
@@ -6681,6 +6691,8 @@ BTCUNLOCK_COORD_TOKEN=&lt;token&gt; python3 BTCunlock/btcunlock-worker.py \
         <button id="rigs-nav-fleet" onclick="rigsView('fleet')" class="text-xs font-semibold px-4 py-2 rounded-lg border border-zion-gold/50 bg-zion-gold/15 text-zion-gold transition">Fleet</button>
         <button id="rigs-nav-market" onclick="rigsView('market')" class="text-xs font-semibold px-4 py-2 rounded-lg border border-white/10 bg-black/30 text-gray-400 hover:text-white hover:border-white/25 transition">GPU market</button>
         <button id="rigs-nav-ai" onclick="rigsView('ai')" class="text-xs font-semibold px-4 py-2 rounded-lg border border-white/10 bg-black/30 text-gray-400 hover:text-white hover:border-white/25 transition">AI inference</button>
+        <button id="rigs-nav-agents" onclick="rigsView('agents')" class="text-xs font-semibold px-4 py-2 rounded-lg border border-white/10 bg-black/30 text-gray-400 hover:text-white hover:border-white/25 transition">Agenti</button>
+        <button id="rigs-nav-alerts" onclick="rigsView('alerts')" class="text-xs font-semibold px-4 py-2 rounded-lg border border-white/10 bg-black/30 text-gray-400 hover:text-white hover:border-white/25 transition">Alerty</button>
         <span class="text-[10px] text-gray-500 ml-auto">jeden control plane · vastctl @ edge:8088</span>
       </div>
     </div>
@@ -6790,6 +6802,40 @@ BTCUNLOCK_COORD_TOKEN=&lt;token&gt; python3 BTCunlock/btcunlock-worker.py \
       <div class="zion-panel p-4">
         <h2 class="text-sm font-bold text-white mb-3 flex items-center gap-2"><i class="fas fa-comments text-emerald-400"></i> Chat</h2>
         <div id="ai-chat-area"><div class="text-xs text-gray-500">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- ── AGENTI ─────────────────────────────────────────────────────── -->
+    <div id="rigs-view-agents" class="hidden space-y-4">
+      <div class="zion-panel p-4">
+        <div class="flex flex-wrap items-center gap-2 mb-1">
+          <h2 class="text-sm font-bold text-white flex items-center gap-2"><i class="fas fa-satellite-dish text-zion-cyan"></i> Fleet agenti</h2>
+          <span id="agents-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-black/40 border border-white/10 text-gray-400">—</span>
+          <button onclick="loadAgentsView()" class="ml-auto text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">⟳ Refresh</button>
+        </div>
+        <p class="text-[11px] text-gray-500 mb-3 leading-relaxed">
+          Rig agent posílá heartbeat každých 30–60 s na <code class="text-gray-300">/api/agent/heartbeat</code>
+          (<code class="text-gray-300">agent → nginx EDGE2 → ssh -L 8088 → vastctl serve</code>).
+          Starší heartbeat než 180 s = rig je pryč nebo je dole ingress tunel.
+        </p>
+        <div id="agents-body"><div class="text-xs text-gray-500">Loading…</div></div>
+      </div>
+    </div>
+
+    <!-- ── ALERTY (vastctl) ───────────────────────────────────────────── -->
+    <div id="rigs-view-alerts" class="hidden space-y-4">
+      <div class="zion-panel p-4">
+        <div class="flex flex-wrap items-center gap-2 mb-1">
+          <h2 class="text-sm font-bold text-white flex items-center gap-2"><i class="fas fa-bell text-amber-300"></i> Fleet alerty (vastctl)</h2>
+          <span id="fleet-alerts-badge" class="text-[10px] px-2 py-0.5 rounded-full bg-black/40 border border-white/10 text-gray-400">—</span>
+          <button onclick="loadFleetAlerts()" class="ml-auto text-xs px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded transition">⟳ Refresh</button>
+        </div>
+        <p class="text-[11px] text-gray-500 mb-3 leading-relaxed">
+          Routing alertů vastctl (kanály, příjemci, testovací odeslání). Endpoint je <b class="text-gray-300">ops-only</b> —
+          dashboard ho volá z trusted localhostu s <code class="text-gray-300">X-Ops-Auth</code>.
+          Alerty infrastruktury (G8, pool, služby) jsou v záložce <b class="text-gray-300">Alerts</b>.
+        </p>
+        <div id="fleet-alerts-body"><div class="text-xs text-gray-500">Loading…</div></div>
       </div>
     </div>
   </div>
@@ -8780,9 +8826,27 @@ BTCUNLOCK_COORD_TOKEN=&lt;token&gt; python3 BTCunlock/btcunlock-worker.py \
         <button onclick="window.open('https://market.zionterranova.com/admin/orders','_blank')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs transition">↗ Otevřít na celou obrazovku</button>
       </div>
     </div>
-    <div class="zion-panel p-0 overflow-hidden" style="min-height:70vh;">
-      <iframe class="marketplace-iframe w-full" data-hash="orders" src="https://market.zionterranova.com/admin/orders" style="min-height:70vh;border:none;" title="Marketplace Orders"></iframe>
-    </div>
+    <div class="zion-panel p-6">
+        <div class="flex items-start gap-3">
+          <div class="text-2xl">🔐</div>
+          <div class="flex-1">
+            <h2 class="text-sm font-bold text-white">Market admin má vlastní přihlášení</h2>
+            <p class="text-[11px] text-gray-500 mt-1 leading-relaxed">
+              Tahle stránka se dřív vkládala jako <code class="text-gray-300">iframe</code> na
+              <code class="text-gray-300">market.zionterranova.com/admin/orders</code>, ale market má
+              vlastní session (SameSite cookie se do cizího rámce neposílá), takže se uvnitř dashboardu
+              vždy zobrazila jen 401. Otevírej ji prosím v novém okně — přihlášení tam zůstane.
+            </p>
+            <div class="flex flex-wrap gap-2 mt-3">
+              <a href="https://market.zionterranova.com/admin/orders" target="_blank" rel="noopener"
+                 class="inline-flex items-center gap-1.5 rounded-lg border border-zion-gold/50 bg-zion-gold/15 px-3 py-1.5 text-xs font-semibold text-zion-gold hover:bg-zion-gold/25 transition">
+                ↗ Otevřít Market Orders
+              </a>
+              <span class="text-[10px] text-gray-600 self-center">API: <code>/api/admin/orders</code></span>
+            </div>
+          </div>
+        </div>
+      </div>
   </div>
 
   <!-- ═════════ TAB: Marketplace Invoices ═════════ -->
@@ -8796,9 +8860,27 @@ BTCUNLOCK_COORD_TOKEN=&lt;token&gt; python3 BTCunlock/btcunlock-worker.py \
         <button onclick="window.open('https://market.zionterranova.com/admin/invoices','_blank')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs transition">↗ Otevřít na celou obrazovku</button>
       </div>
     </div>
-    <div class="zion-panel p-0 overflow-hidden" style="min-height:70vh;">
-      <iframe class="marketplace-iframe w-full" data-hash="invoices" src="https://market.zionterranova.com/admin/invoices" style="min-height:70vh;border:none;" title="Marketplace Invoices"></iframe>
-    </div>
+    <div class="zion-panel p-6">
+        <div class="flex items-start gap-3">
+          <div class="text-2xl">🔐</div>
+          <div class="flex-1">
+            <h2 class="text-sm font-bold text-white">Market admin má vlastní přihlášení</h2>
+            <p class="text-[11px] text-gray-500 mt-1 leading-relaxed">
+              Tahle stránka se dřív vkládala jako <code class="text-gray-300">iframe</code> na
+              <code class="text-gray-300">market.zionterranova.com/admin/invoices</code>, ale market má
+              vlastní session (SameSite cookie se do cizího rámce neposílá), takže se uvnitř dashboardu
+              vždy zobrazila jen 401. Otevírej ji prosím v novém okně — přihlášení tam zůstane.
+            </p>
+            <div class="flex flex-wrap gap-2 mt-3">
+              <a href="https://market.zionterranova.com/admin/invoices" target="_blank" rel="noopener"
+                 class="inline-flex items-center gap-1.5 rounded-lg border border-zion-gold/50 bg-zion-gold/15 px-3 py-1.5 text-xs font-semibold text-zion-gold hover:bg-zion-gold/25 transition">
+                ↗ Otevřít Market Invoices
+              </a>
+              <span class="text-[10px] text-gray-600 self-center">API: <code>/api/admin/invoices</code></span>
+            </div>
+          </div>
+        </div>
+      </div>
   </div>
 
   <!-- ═════════ TAB: Marketplace Shipping ═════════ -->
@@ -8812,9 +8894,27 @@ BTCUNLOCK_COORD_TOKEN=&lt;token&gt; python3 BTCunlock/btcunlock-worker.py \
         <button onclick="window.open('https://market.zionterranova.com/admin/shipping','_blank')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs transition">↗ Otevřít na celou obrazovku</button>
       </div>
     </div>
-    <div class="zion-panel p-0 overflow-hidden" style="min-height:70vh;">
-      <iframe class="marketplace-iframe w-full" data-hash="shipping" src="https://market.zionterranova.com/admin/shipping" style="min-height:70vh;border:none;" title="Marketplace Shipping"></iframe>
-    </div>
+    <div class="zion-panel p-6">
+        <div class="flex items-start gap-3">
+          <div class="text-2xl">🔐</div>
+          <div class="flex-1">
+            <h2 class="text-sm font-bold text-white">Market admin má vlastní přihlášení</h2>
+            <p class="text-[11px] text-gray-500 mt-1 leading-relaxed">
+              Tahle stránka se dřív vkládala jako <code class="text-gray-300">iframe</code> na
+              <code class="text-gray-300">market.zionterranova.com/admin/shipping</code>, ale market má
+              vlastní session (SameSite cookie se do cizího rámce neposílá), takže se uvnitř dashboardu
+              vždy zobrazila jen 401. Otevírej ji prosím v novém okně — přihlášení tam zůstane.
+            </p>
+            <div class="flex flex-wrap gap-2 mt-3">
+              <a href="https://market.zionterranova.com/admin/shipping" target="_blank" rel="noopener"
+                 class="inline-flex items-center gap-1.5 rounded-lg border border-zion-gold/50 bg-zion-gold/15 px-3 py-1.5 text-xs font-semibold text-zion-gold hover:bg-zion-gold/25 transition">
+                ↗ Otevřít Market Shipping
+              </a>
+              <span class="text-[10px] text-gray-600 self-center">API: <code>/api/admin/shipping</code></span>
+            </div>
+          </div>
+        </div>
+      </div>
   </div>
 
   <!-- ═════════ TAB: Marketplace Stripe ═════════ -->
@@ -8828,9 +8928,27 @@ BTCUNLOCK_COORD_TOKEN=&lt;token&gt; python3 BTCunlock/btcunlock-worker.py \
         <button onclick="window.open('https://market.zionterranova.com/admin/stripe','_blank')" class="px-3 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-xs transition">↗ Otevřít na celou obrazovku</button>
       </div>
     </div>
-    <div class="zion-panel p-0 overflow-hidden" style="min-height:70vh;">
-      <iframe class="marketplace-iframe w-full" data-hash="stripe" src="https://market.zionterranova.com/admin/stripe" style="min-height:70vh;border:none;" title="Marketplace Stripe"></iframe>
-    </div>
+    <div class="zion-panel p-6">
+        <div class="flex items-start gap-3">
+          <div class="text-2xl">🔐</div>
+          <div class="flex-1">
+            <h2 class="text-sm font-bold text-white">Market admin má vlastní přihlášení</h2>
+            <p class="text-[11px] text-gray-500 mt-1 leading-relaxed">
+              Tahle stránka se dřív vkládala jako <code class="text-gray-300">iframe</code> na
+              <code class="text-gray-300">market.zionterranova.com/admin/stripe</code>, ale market má
+              vlastní session (SameSite cookie se do cizího rámce neposílá), takže se uvnitř dashboardu
+              vždy zobrazila jen 401. Otevírej ji prosím v novém okně — přihlášení tam zůstane.
+            </p>
+            <div class="flex flex-wrap gap-2 mt-3">
+              <a href="https://market.zionterranova.com/admin/stripe" target="_blank" rel="noopener"
+                 class="inline-flex items-center gap-1.5 rounded-lg border border-zion-gold/50 bg-zion-gold/15 px-3 py-1.5 text-xs font-semibold text-zion-gold hover:bg-zion-gold/25 transition">
+                ↗ Otevřít Market Stripe
+              </a>
+              <span class="text-[10px] text-gray-600 self-center">API: <code>/api/admin/stripe/status</code></span>
+            </div>
+          </div>
+        </div>
+      </div>
   </div>
 
   </main>
@@ -8847,7 +8965,7 @@ BTCUNLOCK_COORD_TOKEN=&lt;token&gt; python3 BTCunlock/btcunlock-worker.py \
   </div>
 </div>
 
-<script src="/dashboard.js?v=134" defer></script>
+<script src="/dashboard.js?v=138" defer></script>
 <script>
 // ═══ Supported AuxPoW coin tickers (keep in sync with app.py AUXPOW_SUPPORTED_COINS) ═══
 const STREAM_COIN_TICKERS = [

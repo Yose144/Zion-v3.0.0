@@ -24,6 +24,8 @@ Routes (GET unless noted):
     /api/ops/pool              pool stats + top miners + recent blocks
     /api/ops/market            GPU market offers (vast.ai), cheapest first
     /api/ops/ai                inference status per rig + model catalog
+    /api/ops/agents            fleet agent registry + heartbeat freshness
+    /api/ops/alerts            vastctl alert routing status (ops-only surface)
     /api/ops/audit             recent operator actions (whitelisted proxy log)
     /api/ops/status            raw vastctl snapshot (debug)
     /api/ops/logs?id=&src=     miner/session log tail (proxied)
@@ -89,6 +91,12 @@ def _http(url: str, timeout: float = TIMEOUT, method: str = "GET",
     req = urllib.request.Request(url, method=method, data=body)
     if body is not None:
         req.add_header("Content-Type", "application/json")
+    # Trusted local caller marker: vastctl's ops-only surfaces (`/api/alerts/*`)
+    # accept `X-Ops-Auth: 1` from nginx *after* basic auth. The dashboard is the
+    # same kind of caller — it runs on the same box, binds 127.0.0.1 and is
+    # itself behind Basic Auth/ZIS — so it may assert the same header. Nothing
+    # client-supplied is forwarded: this is added server-side, after auth.
+    req.add_header("X-Ops-Auth", "1")
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return int(getattr(r, "status", 200)), r.read()
@@ -389,6 +397,14 @@ def market(params: dict) -> dict:
             qs["max_dph"] = str(float(dph))
         except ValueError:
             pass
+    # vast.ai's offers query takes 5-15 s. Cache it for a minute so paging
+    # through the market (or re-opening the sub-tab) is instant.
+    key = "market:" + urllib.parse.urlencode(sorted(qs.items()))
+    cached = _cached(key, float(os.environ.get("OPS_MARKET_TTL", "60")), lambda: None)
+    if isinstance(cached, dict) and cached.get("offers"):
+        cached["cached"] = True
+        return cached
+
     code, raw = _http(f"{VASTCTL_URL}/api/offers?" + urllib.parse.urlencode(qs), timeout=40)
     if code != 200:
         return {"error": f"offers API returned HTTP {code}", "offers": []}
@@ -398,7 +414,80 @@ def market(params: dict) -> dict:
         return {"error": "offers API returned invalid JSON", "offers": []}
     offers = [o for o in offers if isinstance(o, dict)]
     offers.sort(key=lambda o: float(o.get("dph_total") or 9e9))
-    return {"offers": offers, "count": len(offers), "gpu": gpu}
+    out = {"offers": offers, "count": len(offers), "gpu": gpu, "ts": int(time.time())}
+    _cache[key] = (time.time(), out)
+    return out
+
+
+def agents() -> dict:
+    """Fleet agent registry (vastctl `agent/fleet`) + heartbeat freshness.
+
+    Agents heartbeat every 30-60 s. Anything older than `OPS_AGENT_STALE_S`
+    (default 180 s) is reported as stale — a silent agent means the rig is
+    either gone or the ingress tunnel is broken, which is exactly what the
+    operator needs to see at a glance.
+    """
+    stale_after = float(os.environ.get("OPS_AGENT_STALE_S", "180"))
+    data = _json(f"{VASTCTL_URL}/api/agent/fleet", timeout=20)
+    if not isinstance(data, dict):
+        return {"ok": False, "error": "agent registry unavailable", "url": VASTCTL_URL, "agents": []}
+    rigs = data.get("rigs")
+    if not isinstance(rigs, list):
+        rigs = []
+    out = []
+    for r in rigs:
+        if not isinstance(r, dict):
+            continue
+        age = r.get("age_s")
+        try:
+            age = float(age) if age is not None else None
+        except (TypeError, ValueError):
+            age = None
+        out.append({
+            "rig_id": r.get("rig_id"),
+            "hostname": r.get("hostname"),
+            "enrolled": bool(r.get("enrolled")),
+            "group": r.get("group"),
+            "desired": r.get("desired"),
+            "age_s": age,
+            "live": age is not None and age <= stale_after,
+            "applied_sheet": r.get("applied_sheet"),
+            "last_seen": r.get("last_seen"),
+        })
+    out.sort(key=lambda a: (a["age_s"] if a["age_s"] is not None else 1e18))
+    live = sum(1 for a in out if a["live"])
+    return {
+        "ok": True,
+        "agents": out,
+        "count": len(out),
+        "live": live,
+        "stale": len(out) - live,
+        "stale_after_s": stale_after,
+        "ts": int(time.time()),
+    }
+
+
+def alerts() -> dict:
+    """vastctl alert routing status (`/api/alerts/status`).
+
+    Ops-only surface; reachable because `_http` asserts `X-Ops-Auth: 1` from
+    this trusted local caller. A 403 is reported as `needs_token` instead of a
+    scary error, so the UI can explain it.
+    """
+    code, raw = _http(f"{VASTCTL_URL}/api/alerts/status", timeout=15)
+    if code == 403:
+        return {"ok": False, "needs_token": True,
+                "error": "vastctl vyžaduje ops token (X-Ops-Auth) — endpoint je ops-only"}
+    if code != 200 or not raw:
+        return {"ok": False, "error": f"alerts API returned HTTP {code}"}
+    try:
+        data = json.loads(raw.decode("utf-8", "replace"))
+    except Exception:
+        return {"ok": False, "error": "alerts API returned invalid JSON"}
+    if isinstance(data, dict):
+        data.setdefault("ok", True)
+        return data
+    return {"ok": True, "data": data}
 
 
 def ai() -> dict:
@@ -685,6 +774,10 @@ def handle(handler, route: str, params: dict, method: str = "GET",
             handler._json(market(params))
         elif route == "/api/ops/ai":
             handler._json(ai())
+        elif route == "/api/ops/agents":
+            handler._json(agents())
+        elif route == "/api/ops/alerts":
+            handler._json(alerts())
         elif route == "/api/ops/audit":
             try:
                 limit = int((params.get("limit") or ["40"])[0])
