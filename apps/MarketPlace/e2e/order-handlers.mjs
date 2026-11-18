@@ -29,6 +29,7 @@ const input = (orderId = 'FIXTURE-1234567890') => ({
     address: { street: 'PRIVATE-STREET', city: 'PRIVATE-CITY', zip: 'PRIVATE-ZIP' } },
   termsAccepted: true, shipping: { method: 'virtualni-nakup' }, payment: 'transfer',
   items: [{ externalId: 'book-001', quantity: 1 }], note: 'PRIVATE-NOTE',
+  digitalConsent: { accepted: true, version: digitalConsentVersion },
 });
 const storedOrder = (over = {}) => ({
   id: 'fixture-db-id', orderId: 'FIXTURE-1234567890', status: 'pending', paymentStatus: 'unpaid',
@@ -46,6 +47,7 @@ class FixturePrismaError extends Error {
   constructor(code) { super('synthetic database error'); this.code = code; }
 }
 let state;
+let digitalConsentVersion = '';
 let transactionTail = Promise.resolve();
 function reset({ products = [product()], orders = [] } = {}) {
   state = {
@@ -158,12 +160,13 @@ try {
     'shop-zionpay': ['SHOP_VAULT', 'shopPayMemo', 'storeExpectation', 'loadExpectation'],
     prisma: ['Prisma'],
   };
-  const real = new Set(['shop-order-guard', 'fire-safety', 'shop-campaign', 'email-lang']);
+  const real = new Set(['shop-order-guard', 'fire-safety', 'shop-campaign', 'email-lang', 'digital-consent']);
   const outfile = join(dir, 'handlers.cjs');
   await build({
     stdin: { contents: `export { POST } from ${JSON.stringify(resolve(here, '../src/app/api/shop/orders/route.ts'))};
       export { GET } from ${JSON.stringify(resolve(here, '../src/app/api/shop/orders/[orderId]/route.ts'))};
-      export { FIRE_CONSENT_VERSION } from ${JSON.stringify(resolve(here, '../src/lib/fire-safety.ts'))};`,
+      export { FIRE_CONSENT_VERSION } from ${JSON.stringify(resolve(here, '../src/lib/fire-safety.ts'))};
+      export { DIGITAL_CONSENT_VERSION } from ${JSON.stringify(resolve(here, '../src/lib/digital-consent.ts'))};`,
     resolveDir: here, loader: 'ts' },
     outfile, bundle: true, platform: 'node', format: 'cjs', logLevel: 'warning',
     tsconfig: resolve(here, '../tsconfig.json'),
@@ -180,7 +183,8 @@ try {
       b.onResolve({ filter: /^(next\/server|qrcode)$/ }, ({ path }) => ({ path: require.resolve(path), external: true }));
     } }],
   });
-  const { POST, GET, FIRE_CONSENT_VERSION } = require(outfile);
+  const { POST, GET, FIRE_CONSENT_VERSION, DIGITAL_CONSENT_VERSION } = require(outfile);
+  digitalConsentVersion = DIGITAL_CONSENT_VERSION;
   async function post(body, raw = false) {
     const response = await POST(new NextRequest('http://fixture.invalid/api/shop/orders', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: raw ? body : JSON.stringify(body),
