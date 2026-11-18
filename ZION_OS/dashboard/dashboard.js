@@ -229,8 +229,32 @@ function clearTabTimers(except){
 // single Python process where many handlers do blocking subprocess/HTTP work,
 // so firing 10+ requests at once made each of them exceed its own client
 // timeout (ERR_ABORTED storms on 2026-11-18).
-function queueLoads(tasks, spacing = 120){
-  let i = 0;
+// ── Nav groups: hover na desktopu, klik/tap na mobilu ──────────────────────
+function closeNavGroups(){
+  document.querySelectorAll('.zion-nav-group.open').forEach(g => g.classList.remove('open'));
+}
+
+let _navToggleTs = 0;
+function toggleNavGroup(btn){
+  // Some mobile browsers fire touchend + a synthesized click; without this
+  // guard the group would open and immediately close again.
+  const now = Date.now();
+  if(now - _navToggleTs < 300) return;
+  _navToggleTs = now;
+  const group = btn.parentElement;
+  const wasOpen = group.classList.contains('open');
+  closeNavGroups();
+  if(!wasOpen) group.classList.add('open');
+}
+
+document.addEventListener('click', (e) => {
+  if(!e.target.closest('.zion-nav-group')) closeNavGroups();
+});
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape') closeNavGroups();
+});
+
+function queueLoads(tasks, spacing = 120){  let i = 0;
   const step = () => {
     if(i >= tasks.length) return;
     const task = tasks[i++];
@@ -242,31 +266,22 @@ function queueLoads(tasks, spacing = 120){
 
 function switchTab(name){
   currentTab = name;
+  closeNavGroups();
   // Keep the URL in sync so a view can be linked/bookmarked (`#rigs`).
   try {
     if(location.hash !== '#' + name) history.replaceState(null, '', '#' + name);
   } catch(e) { /* file:// or sandboxed context */ }
   TABS.forEach(t => {
     const pane = document.getElementById('pane-' + t);
-    const btn = document.getElementById('tab-' + t);
     if(pane){
       pane.style.setProperty('display', (t === name) ? 'block' : 'none', 'important');
     }
-    if(btn) btn.classList.toggle('tab-active', t === name);
   });
-
-  // Extra aliases for duplicate nav entries (e.g. Wallets in Pool dropdown).
-  const extraBtns = {
-    'wallets': ['tab-pool-wallets'],
-    'marketplace-orders': ['tab-marketplace-orders-quick'],
-    'qtc': ['tab-qtc-quick'],
-  };
-  for(const [tab, ids] of Object.entries(extraBtns)){
-    ids.forEach(id => {
-      const el = document.getElementById(id);
-      if(el) el.classList.toggle('tab-active', tab === name);
-    });
-  }
+  // Active state is driven by `data-tab-target`, so a tab can appear in several
+  // places (group dropdown, quick chip, hero card) without duplicate IDs.
+  document.querySelectorAll('[data-tab-target]').forEach(el => {
+    el.classList.toggle('tab-active', el.dataset.tabTarget === name);
+  });
 
   // ── Auto-refresh timers ─────────────────────────────────────────────
   if(name === 'overview'){ queueLoads([loadMempool, loadMonitoringStatus, updateChainStats, updateRecentBlocks, updateTopWallets, updateBlockRewardBreakdown, updateNetworkGrowth, updateMinerLeaderboard, updatePoolConnectionHistory, updateDifficultyForecast, loadMaintStatus]); }

@@ -1,6 +1,8 @@
 # ZION V3 — Canonical Status (Mainnet Beta)
 
-> **Datum poslední aktualizace:** 2026-11-11
+> **Datum poslední aktualizace:** 2026-11-18
+>
+> **Update (2026-11-18, operativní refresh):** **Chain height 129 332** (chain_height 129332, accepted_blocks 129333, native_tip `ec83b42b…2247fb`), všechny 3 nody (EDGE2 9445 + EDGE 9446/9447) na stejném tipu, difficulty 2881. Předchozí záznamy 21. 10. („~90 400+") byly zastaralé — skutečná výška je ~129 300+. Protokol handshake `zion-v3-node/3.1.0-alpha`, workspace 3.2.0, stupeň 3.2.0 Mainnet Beta. G8 run #7 (11. 11.) 99,918 % pending.
 >
 > **Update (2026-11-11 (4), autonomní fronta — release artefakty macOS + git sjednocení + bot navigace):** **Git:** `main` a `feat/engine-b-visual-upgrade` se rozešly (18 vs 21 commitů) — větev nesla práci, která **už byla na produkci** (Engine B `3e82f7499`, aréna mapy proto 38, Lumi motiv), ale v `main` chyběla. Sjednoceno mergem `76c4a4aa1` (8 konfliktů) → fast-forward `main` → push; vzdálená větev fast-forwardnuta na `main`, divergence nemůže vzniknout znovu. **9.B4 release artefakty — ✅ celá sada:** Mac už není plný (**15–22 GB**), takže vzniklo **6 artefaktů z commitu `df4dc3296`**, všechny **`--verify` PASS** a `tree_state: clean` — macOS `x86_64` i `aarch64` (každý default **+ gpu-metal**) v `dist/v3.2.0-rc-w1.5-macos/`, `x86_64-unknown-linux-gnu` (**max `GLIBC_2.29`**, cross přes nový `--zig 2.31`; `AR`/`RANLIB` override byl nutný kvůli `ring`/`aws-lc-sys`) a `x86_64-pc-windows-gnu` (**PE32+**). Verifier přitom odhalil chybu builderu (`[ "$variant" = "$features" ]` tiše zahodilo features u `gpu-metal:gpu-metal` → dva identické CPU balíčky), opraveno. Zbývá jen rebuild všech z RC commitu (👤 9.S1). **Bot navigace arény:** test `arena-maps` padal ~1/10 — tři chyby v mozku bota (náhoda přes `Math.random` místo `BotOptions.rng`; skok i na zeď vyšší než dosah skoku; mrtvá zóna waypointu + strafe během přesunu svedl bota ze schodů). Opraveno, **10/10 zelených**, net testy `arena`/`arena-bots`/`smoke` OK. **Hygiena:** `cargo fmt --all` (144 hunků / 41 souborů → `--check` čistý). **Docs:** nirvana **proto 38** repo=live, chain tip **119 483**, G8 run #7 **99,918 %** (`pending`, 6× 60 s vč. `pool_stratum` 11. 11. 14:27Z). Report: [`REPORTS/REPORT_2026-11-11_RELEASE_MACOS.md`](REPORTS/REPORT_2026-11-11_RELEASE_MACOS.md).
 >
@@ -154,9 +156,9 @@
 
 | Metric | Value |
 |--------|-------|
-| **Height** | ~90 400+ (2026-10-21; EDGE2 primary + EDGE node2/node3 followeři na stejném tipu) |
-| **Native height** | ~90 400+ |
-| **Accepted blocks** | ~90 400+ |
+| **Height** | ~129 300+ (chain_height 129332 k 18. 11. 2026; EDGE2 primary + EDGE node2/node3 followeři na stejném tipu) |
+| **Native height** | ~129 300+ |
+| **Accepted blocks** | ~129 300+ |
 | **Protocol** | `zion-v3-node/3.1.0-alpha` (V31; workspace version `3.2.0`) |
 | **Genesis (V3 compat)** | `4cf7560f9140deb9376fa6567e76eacaa8bd1b733ca3c91b00830a08f332ef71` |
 | **Genesis (V31 native)** | `96109423298542a836edc10b9ba5ff9b29a1970418db543c2ee5cd952fe35bdb` |

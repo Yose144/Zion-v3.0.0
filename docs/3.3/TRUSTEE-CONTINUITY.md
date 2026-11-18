@@ -7,7 +7,7 @@
 > **Datum:** 2026-11-18 (v1.0 — 2026-11-14)
 > **Určeno pro:** Erika Imlaufová (hlavní správkyně), Petra Tkácová (zástupkyně)
 > **Sepsal:** Yosef Hubálek
-> **Stav sítě při této revizi:** Mainnet Beta v3.2.0, výška chainu **128 400** (18. 11. 2026), uzel 3.2.0, protokol 3.1.0-alpha
+> **Stav sítě při této revizi:** Mainnet Beta v3.2.0, výška chainu **129 332** (18. 11. 2026), uzel 3.2.0, protokol 3.1.0-alpha
 >
 > **Co je nového proti v1.0 (nic z toho nemění tvoje povinnosti):**
 > - **Hlavní web a e-shop zase normálně běží** (apex `zionterranova.com` už není v údržbě) — dřív vracel 503.
@@ -307,7 +307,7 @@ se jich** — viz ČÁST 9.4.
 ### 3.6 Co je „výška chainu" a proč je důležitá
 
 Každý blok má pořadové číslo. Říká se mu **výška** (height). Když je výška
-128 400, znamená to, že od začátku sítě vzniklo 128 400 bloků.
+129 332, znamená to, že od začátku sítě vzniklo 129 332 bloků.
 
 **Blok vzniká přibližně každých 60 sekund.** Pokud se výška za hodinu nezmění,
 síť se zastavila. To je nejdůležitější číslo, které kdy budeš kontrolovat.
@@ -315,7 +315,7 @@ síť se zastavila. To je nejdůležitější číslo, které kdy budeš kontrol
 **Kde ho najdeš:**
 
 - `https://explorer.zionterranova.com` — nahoře velké číslo
-- `https://app.zionterranova.com/api/health` — v textu `"height":128400` (příklad k 18. 11. 2026; číslo roste, důležité je, že se mění)
+- `https://app.zionterranova.com/api/health` — v textu `"height":129332` (příklad k 18. 11. 2026; číslo roste, důležité je, že se mění)
 - Nebo se zeptej operátora
 
 ### 3.7 „Loď Království srdce" — vize, ne majetek
@@ -1011,7 +1011,7 @@ $ curl -s -X POST http://127.0.0.1:9445/jsonrpc -H 'Content-Type: application/js
 
 Uvidíš něco jako:
 ```
-{"id":1,"jsonrpc":"2.0","result":{"chain_height":128400,...}}
+{"id":1,"jsonrpc":"2.0","result":{"chain_height":129332,...}}
 ```
 
 (Číslo je příklad k 18. 11. 2026. Podstatné je, že roste — pokud se za hodinu nezmění, síť stojí.)
@@ -1526,7 +1526,7 @@ kopie, trezor).
 
 | Datum | Verze | Co se změnilo | Kdo |
 |---|---|---|---|
-| 2026-11-18 | 1.1 | Refresh stavu: apex zpět live (maintenance off), cena lampionu 590 Kč / 84 960 ZION, placené soubory jen přes podepsaný odkaz (přímý ZIP vrací 401), nové 3.3 služby (kingdom/realtime/onboard/portal/ops/updates) včetně seznamu **záměrně nedostupných** hostnames, QTC/PRL payout zapnutý (treasury 0 → nic se neposílá), premine ~29. 11. Měřený stav: chain **128 400**, v3.2.0. | Yosef Hubálek |
+| 2026-11-18 | 1.1 | Refresh stavu: apex zpět live (maintenance off), cena lampionu 590 Kč / 84 960 ZION, placené soubory jen přes podepsaný odkaz (přímý ZIP vrací 401), nové 3.3 služby (kingdom/realtime/onboard/portal/ops/updates) včetně seznamu **záměrně nedostupných** hostnames, QTC/PRL payout zapnutý (treasury 0 → nic se neposílá), premine ~29. 11. Měřený stav: chain **129 332**, v3.2.0. | Yosef Hubálek |
 | 2026-11-14 | 1.0 | První verze. Sepsáno na základě `docs/private/ZION_SUCCESSION_AND_IP_TRANSFER_PLAN.md`, `ZION_HANDOVER_CHECKLIST.md`, `ZION_DAROVACI_LISTINA_A_PLNA_MOC.md`, `infra/RUNBOOK.md`, `docs/3.2/ops/DR-BRINGUP-RUNBOOK.md`, `POOL-HA-RUNBOOK.md`, `ALERT-RUNBOOK.md`, `PREMINE_144K_CHECKLIST.md`. Ověřen živý stav: chain 123 773, v3.2.0, Mainnet Beta. | Yosef Hubálek |
 
 ---

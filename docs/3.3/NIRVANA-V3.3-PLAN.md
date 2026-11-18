@@ -49,7 +49,7 @@ Změřeno na Edge (`zion-v6`, `vmi3425821`) + lokální repo HEAD `92ef9e1aa`:
 
 | # | DoD podmínka | Stav | Realita |
 |---|---|---|---|
-| 1 | L1 100k+ bloků bez zásahu | 🔄 | height ~90k — číselně blízko, ale **G8 opakovaně padá na uptime** (95 % < 99.9 %) → stabilita, ne výška, je gate |
+| 1 | L1 100k+ bloků bez zásahu | ✅ | height ~129k (18. 11. 2026) — 100k+ gate splněn; **G8 uptime** stále gate (95 % < 99.9 %) → stabilita, ne výška |
 | 2 | ZION↔BTC↔ETH auto-settle + HTLC rollback | ❌ | EVM/Base hotovo (E4 round-trip ✅); BTC holdem — kód+testy ready, chybí audit+IBD+signed quote |
 | 3 | Passkey login napříč weby | 🔄 | backend+routes nasazeny; chybí E2E ověření na všech webech (app/oasis/market/dashboard/freeworld) |
 | 4 | Maestro řídí ≥3 on-chain agenty s Dharma filtrem | ❌ | Maestro CLI funguje (classify→plan), ale `SubAgent::*` = enum stubby; `DharmaValidator` = keyword filter, ne kryptografický mantinel |

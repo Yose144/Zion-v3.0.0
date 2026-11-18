@@ -27,7 +27,7 @@ alwaysApply: false
 
 - **Apex `zionterranova.com` je na EDGE2** (DNS flip 2026-10-22) — static export `/var/www/zion-maintenance` (`location /` → `try_files …/index.html`). Operátorské `/vast-ops/` API = `location /vast-ops/` → `proxy_pass http://127.0.0.1:8088/` + `auth_basic /etc/nginx/.htpasswd-vast` (zkopírováno z edge); upstream = `vastctl-tunnel-edge2.service` na operátorské stanici (`ssh -R 8088 zion-edge2`, sestra `vastctl-tunnel.service` → edge). **`/vast-rigs/` prototyp vyřazen 2026-11-18** (rozhodnutí 👤) — `location /vast-rigs/` → **301 `https://dashboard.zionterranova.com/dashboard#rigs`**; `/vast-rigs/status.json` **zůstává** (čte ho ops_console i archivovaný v3 dashboard na `kingdom.`, píše ho `vastctl-daemon` scp-push do EDGE2 webrootu). **Past:** zálohy `.bak` NIKDY v `sites-enabled/` — include glob `*` je načte a duplicitní `server_name` způsobí varování/shadowing.
 
-- **Chain:** ~90 400+ bloků. EDGE2 = source of truth; node2/node3 = followeři peerující EDGE2:8335.
+- **Chain:** ~129 300+ bloků (chain_height 129332 k 18. 11. 2026). EDGE2 = source of truth; node2/node3 = followeři peerující EDGE2:8335.
 - **Pool zůstává na EDGI záměrně** — stratum musí vidět reálné IP minerů (`ZION_POOL_MAX_SESSIONS_PER_IP=10` + IP ban); nginx stream proxy by je sjednotil pod jednu IP a rozbil per-IP limity.
 - **Watchdog** na EDGI hlídá `node2, node3, pool, fallback-miner, chain-tunnel`. Ghost `node1` je vypnutý (jinak watchdog vzkřísil split-brain na starém tipu).
 - **Rollback:** `/root/cutover-*-rollback.sh` na EDGI — jedno okno = jeden skript. Zpětnovazné zobrazení kroků v [`INFRA-SPLIT-PLAN.md`](docs/plans/INFRA-SPLIT-PLAN.md).
