@@ -1,5 +1,0 @@
-shapely
-ezdxf
-cairosvg
-opencv-python-headless
-numpy
