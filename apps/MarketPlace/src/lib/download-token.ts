@@ -16,6 +16,9 @@ import { shopProducts } from '@/data/shopProducts';
 
 export const BOOK_ZIP_FILE = 'Kralovstvi_srdce_kompletni_edice_5_jazyku.zip';
 
+/** Bezpečné jméno souboru — bez cestovních zkratek (`..`, `/`). */
+const SAFE_FILE_RE = /^[A-Za-z0-9._-]+$/;
+
 const SITE_URL =
   process.env.NEXT_PUBLIC_SITE_URL ?? 'https://market.zionterranova.com';
 
@@ -53,7 +56,7 @@ function safeEqual(a: string, b: string): boolean {
 export function allowedDownloadFiles(): Set<string> {
   const files = new Set<string>();
   for (const p of shopProducts) {
-    const name = protectedFileFromUrl(p.filesUrl);
+    const name = basenameFromUrl(p.filesUrl);
     if (name) files.add(name);
   }
   files.add(BOOK_ZIP_FILE);
@@ -61,11 +64,18 @@ export function allowedDownloadFiles(): Set<string> {
 }
 
 export function isAllowedDownloadFile(file: string): boolean {
-  if (!/^[A-Za-z0-9._-]+$/.test(file)) return false;
+  if (!SAFE_FILE_RE.test(file)) return false;
   return allowedDownloadFiles().has(file);
 }
 
-export function protectedFileFromUrl(url: string | null | undefined): string | null {
+/**
+ * Basename from a self-hosted `/shop/downloads/<file>` URL.
+ *
+ * Pozor: NESMÍ volat `isAllowedDownloadFile` — `allowedDownloadFiles()` staví
+ * seznam právě přes tuhle funkci, takže vzájemné volání = nekonečná rekurze
+ * (celý server se zasekl na /gift/<token> i /shop/downloads/<file>).
+ */
+function basenameFromUrl(url: string | null | undefined): string | null {
   if (!url) return null;
   try {
     const u = new URL(url);
@@ -73,10 +83,15 @@ export function protectedFileFromUrl(url: string | null | undefined): string | n
     const m = u.pathname.match(/^\/shop\/downloads\/([^/]+)$/);
     if (!m) return null;
     const file = decodeURIComponent(m[1]);
-    return isAllowedDownloadFile(file) ? file : null;
+    return SAFE_FILE_RE.test(file) ? file : null;
   } catch {
     return null;
   }
+}
+
+export function protectedFileFromUrl(url: string | null | undefined): string | null {
+  const name = basenameFromUrl(url);
+  return name && isAllowedDownloadFile(name) ? name : null;
 }
 
 function orderPayload(file: string, orderId: string, exp: number): string {

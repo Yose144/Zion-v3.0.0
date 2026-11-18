@@ -100,6 +100,15 @@ if [[ ! -d "${DOWNLOADS_DIR}" ]]; then
   echo "[deploy-marketplace]       Přestavba: python3 scripts/ops/build-kralovstvi-bundle.py --upload"
 fi
 
+# Next `build` zkopíruje public/ do .next/standalone/public/ — odtud by ZIP
+# servíroval statický handler PŘED route (statika má přednost), takže by
+# placený soubor obešel podpis. Z bundle ho proto před rsyncem odstraníme;
+# kanonické místo zůstává /opt/zion/data/downloads/.
+if [[ -d "${ROOT_DIR}/.next/standalone/public/shop/downloads" ]]; then
+  rm -rf "${ROOT_DIR}/.next/standalone/public/shop/downloads"
+  echo "[deploy-marketplace] ZIP odstraněn z .next/standalone/public (statika by obešla podpis)"
+fi
+
 # Safety net: snapshot remote .env before sync (excludes keep it untouched and
 # undeleted — this is only insurance against operator-side edits).
 SSH "cp -a '${REMOTE_DIR}/.env' '${REMOTE_DIR}/.env.pre-deploy-\$(date +%Y%m%d-%H%M%S)' 2>/dev/null || true"
@@ -127,11 +136,15 @@ rsync -avz --delete \
   --exclude='.next/trace' \
   --exclude='.next/dev' \
   --exclude='/public/shop/downloads' \
+  --exclude='/.next/standalone/public/shop/downloads' \
   -e "ssh ${SSH_OPTS}" \
   "${ROOT_DIR}/" \
   "${EDGE_USER}@${EDGE_HOST}:${REMOTE_DIR}/"
 
 echo "[deploy-marketplace] Verifying bundled Next matches the local build"
+# Excludes chrání cestu i před `--delete`, takže starou kopii ZIPu na serveru
+# musíme smazat explicitně — jinak by ji statika servírovala i nadále.
+SSH "rm -rf '${REMOTE_DIR}/public/shop/downloads' '${REMOTE_DIR}/.next/standalone/public/shop/downloads' 2>/dev/null || true"
 LOCAL_NEXT="$(node -p "require('${ROOT_DIR}/.next/standalone/node_modules/next/package.json').version" 2>/dev/null || echo missing)"
 REMOTE_NEXT="$(SSH "node -p \"require('${REMOTE_DIR}/.next/standalone/node_modules/next/package.json').version\"" 2>/dev/null | tr -d '\r' || echo missing)"
 if [[ "${LOCAL_NEXT}" != "${REMOTE_NEXT}" ]]; then
