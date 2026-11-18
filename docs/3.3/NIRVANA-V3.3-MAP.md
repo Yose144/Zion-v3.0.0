@@ -8,6 +8,8 @@
 
 ---
 
+> **📌 2026-11-18 — mapa je SNAPSHOT.** §7 (rozhodovací fronta 👤) je převzatá do [`../../3.3.0/docs/migration/OPEN-OBLIGATIONS.md`](../../3.3.0/docs/migration/OPEN-OBLIGATIONS.md) §4 a **uzavírá se tam**; §5 (ekosystémová matice) je stav 11. 11. a nepřepisuje se. Nové položky sem nepřidávej.
+
 ## 0. Hierarchie pravdy
 
 Při rozporu vyhrává vyšší řádek:
