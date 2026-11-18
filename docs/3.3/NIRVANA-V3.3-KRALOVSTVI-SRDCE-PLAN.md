@@ -17,7 +17,7 @@
 1. **§1** je ověřený stav — měřeno 31. 10. 2026, ne citováno z dokumentů. Když se s ním něco rozchází, má přednost §1.
 2. **§2** je registr rozporů — každý má vlastníka a musí zmizet. Dokud tam je, dokumentům se nedá věřit.
 3. **§3** je šest vln W0–W6. Pořadí není kosmetika: W0 a W1 nikdy nečekají na 👤, W2/W4/W5 ano.
-4. **§4** je kritická cesta. Tři nezávislé věci se sbíhají do 27.–28. 11. 2026.
+4. **§4** je kritická cesta. Tři nezávislé věci se sbíhaly do 27.–28. 11. 2026; po přeměření (18. 11.) je to **premine ~29. 11.** a konec G8 okna **16. 12.**
 5. **§5** jsou akceptační kritéria V33-1…9 — bez nich se vlna nezavírá.
 6. **§6** je to, co plán **nedělá**. Čti to jako hranici, ne jako upozornění.
 
@@ -157,7 +157,7 @@ Cíl: až G8 doběhne, být připraven na RC sign-off. Nezávislé na unifikaci.
 | W1.4 | release artifacts 9.B4: přebuild linux + windows z RC commitu, zbývá OpenCL varianta | 🔄 linux only (default + gpu-opencl) v `dist/v3.2.0-rc-w1.4/`; **BUILD-INFO.txt přidán** (commit `aa6599cce`, 1. 11.); SHA256SUMS aktualizován. **Windows cross-compile:** `cargo check` PASS (1. 11.), `cargo build --release` selhal na `-lOpenCL` (mingw OpenCL ICD loader nedostupný — známý caveat z AGENTS.md); CPU-only varianta (bez gpu-opencl) spuštěna v background. **Macos:** target `aarch64-apple-darwin` nainstalován, build nezkoušen. Zbývá: windows (OpenCL SDK), macos, EDGE rebuild z RC commitu (glibc), embedded `ZION_GIT_SHA` v binárce |
 | W1.5 | audit package refresh (pin na RC commit) | ✅ pin aktualizován na `aa6599cce` (1. 11.), Generated datum 2026-11-01 |
 | W1.6 | cert `auth.` — **aktualizace 31. 10.: už proběhlo.** Cert má `notAfter` **24. 1. 2027** (EDGE2) / 25. 1. 2027 (EDGE), SAN `auth.zionterranova.com`, `certbot.timer` běží 2×/den na obou boxech. Kotva „25. 11. expirace" v `AGENTS.md` je **stale** — renewal proběhl ~26. 10. Zbývá jen kontrola jednou za 2 týdny (`openssl x509 -enddate`) | `openssl x509 -enddate`, certbot log |
-| W1.7 | premine 144k checklist pro 👤 (27.–28. 11., 3-of-3 admin unlock + DAO) | checklist v `docs/3.2/ops/` |
+| W1.7 | premine 144k checklist pro 👤 (**~29. 11.**, 3-of-3 admin unlock + DAO) | checklist v `docs/3.2/ops/` |
 
 **Gate W1:** G8 run #7 `gate_status=passed` nejdříve 6. 12. 14:51:25 UTC → V33-1; žádná otevřená 🤖 položka v RC checklistu. Aktuální `pending` není PASS; G9 a operátorský sign-off jsou další samostatné podmínky.
 
@@ -231,7 +231,7 @@ Zadání 👤 (31. 10.): stack existuje, tak ať je podporovaný a zdokumentovan
 | 5 | **P0-3 rotace** | bezpečnostní dluh | ⬜ |
 | 6 | Osud `api./updates./dex.` | V33-8 | ✅ rozhodnuto 31. 10. (revidováno po živých sondách — viz §2 #5) |
 | 7 | HA vs. single pool (2.S5) | W2 | ✅ rozhodnuto 31. 10. |
-| 8 | **Premine 144k** (27.–28. 11.) | 1.S3 | ⬜ |
+| 8 | **Premine 144k** (~29. 11.) | 1.S3 | ⬜ |
 | 9 | Veřejný launch date | G8 PASS + G9 | ⬜ |
 | 10 | Retenční politika `/opt/zion/backups` (42 G) | disk EDGE 70 % | ⬜ |
 
@@ -257,12 +257,12 @@ Zadání 👤 (31. 10.): stack existuje, tak ať je podporovaný a zdokumentovan
              └─► W4 design (read-only) ─► po RC: K1 impl ─► W5 flip 👤
 ```
 
-**Dvě nezávislé kotvy se sbíhají do 27.–28. 11. 2026** a ani jedna není 🤖:
+**Dvě nezávislé kotvy: premine ~29. 11. 2026 a konec G8 run #8 16. 12. 2026** — ani jedna není 🤖:
 
 | Datum | Událost | Důsledek |
 |---|---|---|
 | 28. 11. 23:46Z | konec G8 run #6 | V33-1; bez PASS není RC sign-off |
-| ~27.–28. 11. | výška 144 000 — time-lock premine slotů 6–8 | utratitelnost dál jen 3-of-3 admin unlock + DAO (1.S3) |
+| ~29. 11. | výška 144 000 — time-lock premine slotů 6–8 | utratitelnost dál jen 3-of-3 admin unlock + DAO (1.S3) |
 
 > **Korekce 31. 10. (W1.6):** třetí kotva „25. 11. expirace certu `auth.`" **neexistuje** — cert byl obnoven ~26. 10. a platí do 24. 1. 2027, `certbot.timer` jede 2×/den na obou boxech. Kotva byla převzata z poznámky v `AGENTS.md`, která popisovala stav *před* renewalem.
 
@@ -274,7 +274,7 @@ Zadání 👤 (31. 10.): stack existuje, tak ať je podporovaný a zdokumentovan
 
 | ID | Kritérium | Důkaz |
 |---|---|---|
-| **KS-1** | G8 run #7 ≥ 99,9 %, bez kritického incidentu, celé okno do 6. 12. 14:51:25 UTC | `g8_run.json` → `gate_status=passed`; nyní pending |
+| **KS-1** | G8 run **#8** `g8-20261116T015534Z` ≥ 99,9 %, bez kritického incidentu, celé okno do **16. 12. 2026 01:55:34 UTC**. Run #7 skončil `failed` (98,906 %, 39 incidentů, 1 kritický) — na jeho PASS se nečeká. | `g8_run.json` → `gate_status=passed`; nyní `running`, 99,964 %, 1× `pool_http`+`pool_stratum` 60 s (17. 11. 23:57:34Z, restart poolu) |
 | **KS-2** | Žádný rozpor dokumentů vs. sonda | §2 tabulka bez řádku `⬜` |
 | **KS-3** | Prokazatelná provenance všech běžících binárek | `deploy-provenance.jsonl` refresh |
 | **KS-4** | Release artefakty pro 3 platformy z RC commitu | `SHA256SUMS` + `BUILD-INFO.txt` |

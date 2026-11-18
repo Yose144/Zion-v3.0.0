@@ -39,13 +39,30 @@
 
 - Uprostřed G8 okna (do 16. 12.). Postup: `docs/ops/PREMINE_144K_CHECKLIST.md` (v 3.3.0).
 
-### 6. Známé holds (záměrně vypnuté)
+### 6. Market `/shop/downloads` — route zablokuje celý event loop (2026-11-18, doručení DOČASNĚ ZAVŘENÉ)
+
+- **Příznak:** request na `/shop/downloads/<soubor>` (i neexistující jméno) zablokuje `next-server` — přestane odpovídat **všechno** (32 % CPU, stav `R`, `curl` timeout), pomůže jen `systemctl restart zion-marketplace`. Jakýkoli bot/skener na této cestě = outage marketu.
+- **Příčina:** není došetřená; v logu je `Error: The Server Reference ID did not match the expected format` → podezření na rozbitý turbopack chunk v nasazeném buildu, ne na logiku route (`verifyDownloadRequest` vrací 401 korektně).
+- **Aktuální stav (2026-11-18):** nginx `location /shop/downloads/` vrací **`return 401`** bez proxy, aby cesta nemohla shodit appku → **digitální doručení je zavřené** (zákazník s podepsaným odkazem ZIP nestáhne). Kanonický soubor zůstává `/opt/zion/data/downloads/`.
+- **Co dělat:** opravit route (ideálně bez `@/data/shopProducts` + bez Prisma v cestě), přebuildovat, ověřit **na staging portu** (`curl :3100/shop/downloads/abc` → 404, `/api/health` stále 200), teprve pak v nginx vrátit `proxy_pass http://127.0.0.1:3100`.
+- **Souvislost:** při zavírání leaku se ukázalo, že ZIP byl i v `apps/MarketPlace/public/shop/downloads/` → Next ho servíroval **staticky před** route handlerem. Deploy teď má `--exclude='/public/shop/downloads'`.
+
+### 7. Čtyři veřejné hostname bez vhostu (2026-11-18, rozpor s branou KS-8)
+
+- `onboard.`, `portal.`, `realtime.` mají DNS na **EDGE1**, ale aplikace běží na **EDGE2** (`:3030`, `:3002`, `:3011`) a vhost nikde → spojení neprojde (000).
+- `ops.` má DNS na EDGE1, appka běží na `:3031` a vyžaduje `X-Ops-Auth` od nginxu (sama vrací 403) → bez vhostu nepoužitelné. Plánovaný hostname pro ops appku je `dashboard.zionterranova.com` (ten dnes obsluhuje starý Python dashboard `:8766`).
+- **Brána `KS-8`** („0 mrtvých veřejných povrchů — buď 200, nebo DNS pryč") je tím **porušena**. Řešení: buď nasadit vhosty, nebo DNS záznamy smazat.
+- **Pozn.:** `updates.zionterranova.com` je naopak **už živý** (401 `licence_required`), i když `3.3.0/CODE_VS_DOCS.md` (13. 11.) tvrdí „veřejně mrtvé".
+
+### 8. Známé holds (záměrně vypnuté)
 
 - `PRL_PAYOUT_DRY_RUN=1` — pool payouty v dry-run.
 - `WARP_API_KEY` unset (pre-existing), `WARP_BTC_SWAP_ENABLED=0` — safety hold do externího auditu.
 - SMOS rig 518837 offline → inference na operátorském PC + EDGE2 CPU fallback.
 - EDGE cleanup ~62 GB starých dat — **NEMAZAT bez potvrzení** (po observačním období).
 - Avatar 037 Gándhí — zůstává procedurální (dodavatel model odmítl).
+
+> **Už NENÍ hold (rozhodnutí 👤 18. 11.):** QTC/PRL nativní payout je **zapnutý** — `ZION_POOL_NATIVE_PAYOUT_COINS="qtu,prl"`, `QTC_PAYOUT_ENABLED=1` (EDGE2), pearl upstream wallet = pool wallet `prl1pzy8…`. `treasury_free=0`, takže payouty jen `deferred`; před dosypáním treasury se reálně neodešle nic.
 
 ---
 

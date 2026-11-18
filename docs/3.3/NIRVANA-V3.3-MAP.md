@@ -136,10 +136,10 @@ Detail bran: [`3.2.1-3.2.9_PLAN.md`](../3.2/3.2.1-3.2.9_PLAN.md) §2 (Beta exit 
                                      ▼
     provenance · alerting · stale-block RCA · DR drill · feature freeze · artefakty  ──►  RC
                                      │
-   G8 run #7 (do 6. 12., 99,92 %, rozpočet 43 min) ──┐
+   G8 run #8 (do 16. 12., běží; #7 failed) ──────────┐
    G9 externí audit ⏸️ posunut 👤 26. 10. ───────────┼──►  3.2.0 MAINNET STABLE  (= N0 ✅)
                                      ▲              │
-   výška 144 000 (~27.–28. 11.): time-lock slotů 6–8 vyprší; spend dál jen 3-of-3 + DAO
+   výška 144 000 (~29. 11.): time-lock slotů 6–8 vyprší; spend dál jen 3-of-3 + DAO
                                                     │
         ┌───────────────┬───────────────┬───────────┼───────────────┬────────────────┐
         ▼               ▼               ▼           ▼               ▼                ▼
@@ -221,7 +221,7 @@ Detail bran: [`3.2.1-3.2.9_PLAN.md`](../3.2/3.2.1-3.2.9_PLAN.md) §2 (Beta exit 
 | 11. 11. | payout monitoring **M2** (probe + rules + pool `ece8b6965`), EDGE2 `networkd-wait-online` fix, ZIS agent sub-accounts (kód), Charta R9 factual ✅ | G8 99,9241 %, 0 nových incidentů |
 | 25. 11. | expirace certu `auth.` | renew musí proběhnout dřív (8.B6) — ⚠️ renewal už proběhl ~26. 10., cert do 24./25. 1. 2027 (ověřeno 31. 10.) |
 | **6. 12. 14:51Z** | **konec G8 run #7** | **V33-1 / KS-1** — hlavní kotva RC |
-| ~27.–28. 11. | výška 144 000 — time-lock premine slotů 6–8 vyprší | utratitelnost dál jen 3-of-3 admin unlock + DAO (1.S3) |
+| ~29. 11. | výška 144 000 — time-lock premine slotů 6–8 vyprší | utratitelnost dál jen 3-of-3 admin unlock + DAO (1.S3) |
 | ⏸️ | G9 posunut 👤 26. 10. | Stable = pozdější z (G8 PASS, G9 uzavření) → bez data, dokud se audit nepřeplánuje |
 
 **Kritická cesta (revize 10. 11.):** G8 run #7 čistě do **6. 12. 14:51Z** + autonomní RC práce (provenance, alerty, DR runbook, artefakty, audit package) hotová **do ~2. 12.** — poslední čtyři dny okna jsou rezerva na 👤 sign-off. G9 zůstává posunuté na neurčito; Stable nemá datum, ale nic nebrání dodělat RC kvalitu a audit package držet připravený k odeslání. Detail: [`NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md`](NIRVANA-V3.3-KRALOVSTVI-SRDCE-PLAN.md) §4.
