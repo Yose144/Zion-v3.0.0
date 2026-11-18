@@ -16,7 +16,7 @@ UNIT="zion-edge-python-dashboard.service"
 SSH_OPTS="${ZION_SSH_OPTS:--o BatchMode=yes -o ConnectTimeout=15 -o ControlMaster=auto -o ControlPath=/tmp/zion-dash-%r@%h:%p -o ControlPersist=10m}"
 VERIFY_PORT="${ZION_VERIFY_PORT:-8798}"
 
-FILES=(app.py dashboard.html dashboard.js ops_console.py .verify_ops.py)
+FILES=(app.py dashboard.html dashboard.js ops_console.py .verify_ops.py tailwind.build.css)
 
 say() { printf '\033[1;36m[dashboard]\033[0m %s\n' "$*"; }
 

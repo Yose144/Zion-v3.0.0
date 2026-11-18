@@ -8,6 +8,7 @@ and parses local log files via a JSON API.
 import base64
 import contextlib
 import fcntl
+import functools
 import gzip
 import hashlib
 import json
@@ -45,6 +46,8 @@ def _ttl_cache_fn(ttl_seconds: float, max_size: int = 256):
     def decorator(fn):
         _cache: dict = {}
         _lock = threading.Lock()
+        _compute_lock = threading.Lock()
+        @functools.wraps(fn)
         def wrapper(*args, **kwargs):
             key = (fn.__name__, args, tuple(sorted(kwargs.items())))
             now = time.time()
@@ -58,19 +61,67 @@ def _ttl_cache_fn(ttl_seconds: float, max_size: int = 256):
                 expired = [k for k, (_, exp) in _cache.items() if exp <= now]
                 for k in expired:
                     del _cache[k]
-            result = fn(*args, **kwargs)
-            with _lock:
-                if len(_cache) >= max_size:
-                    # Evict oldest (arbitrary) key
-                    try:
-                        oldest = next(iter(_cache))
-                        del _cache[oldest]
-                    except StopIteration:
-                        pass
-                _cache[key] = (result, now + ttl_seconds)
-            return result
+            # Single-flight: several tabs/widgets request the same expensive
+            # aggregate at once (e.g. /api/explorer 4x on the Overview tab).
+            # Without this they all missed the cache and each recomputed for
+            # 5-7 s. The second caller now waits and reuses the fresh result.
+            with _compute_lock:
+                now = time.time()
+                with _lock:
+                    hit = _cache.get(key)
+                    if hit and now < hit[1]:
+                        return hit[0]
+                result = fn(*args, **kwargs)
+                with _lock:
+                    if len(_cache) >= max_size:
+                        # Evict oldest (arbitrary) key
+                        try:
+                            oldest = next(iter(_cache))
+                            del _cache[oldest]
+                        except StopIteration:
+                            pass
+                    _cache[key] = (result, time.time() + ttl_seconds)
+                return result
         return wrapper
     return decorator
+
+
+_SYSTEMD_STATE_CACHE: dict = {"ts": 0.0, "data": {}}
+_SYSTEMD_STATE_LOCK = threading.Lock()
+
+
+def _systemd_active_map(units) -> dict:
+    """Batch `systemctl is-active` for many units in a single subprocess call.
+
+    Results are memoised for 5 s so a handler that asks for several units
+    (services grid, monitoring cards, …) still spawns only one subprocess.
+    Unknown units report "unknown" so callers can render them honestly.
+    """
+    units = [u for u in dict.fromkeys(units) if u]
+    if not units:
+        return {}
+    now = time.time()
+    with _SYSTEMD_STATE_LOCK:
+        cache = _SYSTEMD_STATE_CACHE
+        fresh = (now - cache["ts"]) < 5.0
+        if fresh and all(u in cache["data"] for u in units):
+            return {u: cache["data"][u] for u in units}
+    try:
+        proc = subprocess.run(
+            ["systemctl", "is-active", *units],
+            capture_output=True, text=True, timeout=10,
+        )
+        states = (proc.stdout or "").splitlines()
+    except Exception:
+        return {u: "unknown" for u in units}
+    out = {}
+    for i, unit in enumerate(units):
+        state = states[i].strip() if i < len(states) else ""
+        out[unit] = state or "unknown"
+    with _SYSTEMD_STATE_LOCK:
+        _SYSTEMD_STATE_CACHE["data"].update(out)
+        _SYSTEMD_STATE_CACHE["ts"] = now
+    return out
 
 
 def _single_flight(cache: dict, ttl: float, build_fn, not_ready: dict):
@@ -6588,7 +6639,7 @@ def _get_active_miner_worker() -> str:
 
 # ── Explorer data builder ──────────────────────────────────────────────
 
-@_ttl_cache_fn(5.0)
+@_ttl_cache_fn(10.0)
 def build_explorer() -> dict:
     """Fetch blockchain overview for the Explorer tab."""
     info, rpc_host, rpc_port = _rpc_with_fallback("getChainInfo", {}, timeout=2.5)
@@ -6597,11 +6648,18 @@ def build_explorer() -> dict:
     # Genesis block with fallback
     genesis, _, _ = _rpc_with_fallback("getBlockByHeight", {"height": 0}, timeout=1.5)
 
-    # Recent blocks: grab last 10 with short timeouts
+    # Recent blocks: grab last 10 in parallel — ten sequential RPCs with 0.5 s
+    # timeouts made this handler take up to 9 s and the overview refresh
+    # aborted it client-side (2026-11-18).
     recent_blocks = []
     try:
-        for h in range(max(0, chain_height - 9), chain_height + 1):
-            blk = rpc_call(rpc_host, rpc_port, "getBlockByHeight", {"height": h}, timeout=0.5)
+        _heights = list(range(max(0, chain_height - 9), chain_height + 1))
+        with ThreadPoolExecutor(max_workers=max(1, len(_heights))) as _ex:
+            _blocks = list(_ex.map(
+                lambda h: rpc_call(rpc_host, rpc_port, "getBlockByHeight", {"height": h}, timeout=2.0),
+                _heights,
+            ))
+        for h, blk in zip(_heights, _blocks):
             if not blk or blk.get("_rpc_error"):
                 continue
             # V31 block: { "header": { "height", "timestamp", "difficulty", ... }, "transactions": [...] }
@@ -7791,6 +7849,7 @@ def get_pool_debug_dump() -> dict:
     return result
 
 
+@_ttl_cache_fn(30.0)
 def get_pool_blocks(limit: int = 100) -> dict:
     """Proxy to pool /api/v1/blocks endpoint (DB-backed historical blocks).
 
@@ -7826,15 +7885,21 @@ def get_pool_blocks(limit: int = 100) -> dict:
                             coins.append(_cid)
                 except Exception:
                     pass
-                for _cid in coins:
-                    try:
-                        with _ur.urlopen(f"http://{host}:{port}/public/v1/coins/{_cid}/blocks?limit={min(limit,50)}", timeout=5) as r:
-                            _pj = json.loads(r.read().decode("utf-8", errors="ignore"))
-                        for _bb in (_pj.get("blocks") or []):
-                            _bb.setdefault("coin", _cid)
-                            blocks.append(_bb)
-                    except Exception:
-                        continue
+                def _fetch_coin_blocks(_cid):
+                    _pj = _pool_public_cached(host, port, f"/public/v1/coins/{_cid}/blocks?limit={min(limit,50)}",
+                                              ttl=10.0, timeout=5)
+                    out = []
+                    for _bb in (_pj.get("blocks") or []):
+                        _bb.setdefault("coin", _cid)
+                        out.append(_bb)
+                    return out
+
+                # Parallel — 12 coins sequentially cost ~12 s and blew the
+                # browser timeout (2026-11-18).
+                if coins:
+                    with ThreadPoolExecutor(max_workers=len(coins)) as _ex:
+                        for _res in _ex.map(_fetch_coin_blocks, coins):
+                            blocks.extend(_res)
                 def _blk_ts(b):
                     for k in ("ts", "timestamp", "found_at", "time", "height"):
                         v = b.get(k)
@@ -7874,33 +7939,80 @@ def get_pool_blocks(limit: int = 100) -> dict:
         return {"ok": False, "error": str(e)[:200], "blocks": [], "summary": {}, "ts": int(time.time())}
 
 
+_POOL_PUBLIC_CACHE: dict = {}
+_POOL_PUBLIC_LOCK = threading.Lock()
+
+
+def _pool_public_cached(host: str, port: int, path: str, ttl: float = 6.0, timeout: float = 5.0) -> dict:
+    """GET a pool public endpoint with a short TTL cache.
+
+    The pool's own public endpoints are the slow part (per-coin stats ~1.9 s,
+    payouts ~3.6 s), so caching them keeps repeated dashboard polls cheap
+    without touching the pool.
+    """
+    import urllib.request as _ur
+    key = (host, port, path)
+    now = time.time()
+    with _POOL_PUBLIC_LOCK:
+        hit = _POOL_PUBLIC_CACHE.get(key)
+        if hit and now - hit[1] < ttl:
+            return hit[0]
+    try:
+        with _ur.urlopen(f"http://{host}:{port}{path}", timeout=timeout) as r:
+            data = json.loads(r.read().decode("utf-8", errors="ignore"))
+    except Exception as e:
+        # Never cache a failure — a transient pool hiccup used to poison the
+        # cache for the whole TTL and the Pool tab rendered empty (2026-11-18).
+        return {"_error": str(e)[:120]}
+    with _POOL_PUBLIC_LOCK:
+        if len(_POOL_PUBLIC_CACHE) > 256:
+            _POOL_PUBLIC_CACHE.clear()
+        _POOL_PUBLIC_CACHE[key] = (data, now)
+    return data
+
+
+@_ttl_cache_fn(30.0)
 def get_pool_overview() -> dict:
     """Consolidated pool overview for the Pool page — public API only.
 
     Coins (legs/connected), per-coin stats (hashrate, miners, shares),
     recent blocks, payouts, stratum endpoints."""
-    import urllib.request as _ur
     host = EDGE_RPC_HOST if TOPOLOGY == "edge-primary" else "127.0.0.1"
     port = V31_POOL_API_PORT
-    base = f"http://{host}:{port}"
 
-    def _get(path, timeout=5):
-        try:
-            with _ur.urlopen(base + path, timeout=timeout) as r:
-                return json.loads(r.read().decode("utf-8", errors="ignore"))
-        except Exception as e:
-            return {"_error": str(e)[:120]}
+    def _get(path, timeout=5, ttl=6.0):
+        return _pool_public_cached(host, port, path, ttl=ttl, timeout=timeout)
 
     coins_resp = _get("/public/v1/coins")
     coins_list = coins_resp.get("coins", coins_resp) if isinstance(coins_resp, dict) else coins_resp
     if not isinstance(coins_list, list):
         coins_list = []
 
+    # Per-coin stats + blocks are fetched in parallel: the pool exposes one
+    # endpoint per coin, and doing them sequentially pushed this handler past
+    # the browser's request timeout (~12 s for 12 coins on 2026-11-18).
+    cids = [c.get("coin") or c.get("id") or "?" for c in coins_list]
+
+    def _fetch_both(cid):
+        return (
+            _get(f"/public/v1/coins/{cid}/stats", timeout=6, ttl=20.0),
+            _get(f"/public/v1/coins/{cid}/blocks?limit=10", timeout=6, ttl=20.0),
+        )
+
+    per_coin = {}
+    payouts_resp = {}
+    if cids:
+        with ThreadPoolExecutor(max_workers=len(cids) + 1) as _ex:
+            _payout_future = _ex.submit(_get, "/public/v1/payouts?limit=15", 6, 30.0)
+            for cid, (stats, blocks_resp) in zip(cids, _ex.map(_fetch_both, cids)):
+                per_coin[cid] = (stats, blocks_resp)
+            payouts_resp = _payout_future.result() or {}
+
     coins = []
     for c in coins_list:
         cid = c.get("coin") or c.get("id") or "?"
         legs = c.get("legs") or []
-        stats = _get(f"/public/v1/coins/{cid}/stats", timeout=4)
+        stats = per_coin.get(cid, ({}, {}))[0]
         coins.append({
             "coin": cid,
             "name": c.get("name") or cid.upper(),
@@ -7917,14 +8029,13 @@ def get_pool_overview() -> dict:
 
     # recent blocks + payouts (zion first; public per-coin endpoints)
     blocks = []
-    for cid in [c["coin"] for c in coins]:
-        bj = _get(f"/public/v1/coins/{cid}/blocks?limit=10", timeout=4)
+    for cid in cids:
+        bj = per_coin.get(cid, ({}, {}))[1] or {}
         for b in (bj.get("blocks") or []):
             b.setdefault("coin", cid)
             blocks.append(b)
     blocks = blocks[:15]
 
-    payouts_resp = _get("/public/v1/payouts?limit=15", timeout=4)
     payouts = payouts_resp.get("payouts", []) if isinstance(payouts_resp, dict) else []
 
     total_hr = sum((c["hashrate"] or 0) for c in coins if isinstance(c.get("hashrate"), (int, float)))
@@ -9254,6 +9365,7 @@ def _ss58_decode_account(addr: str):
         return None
 
 
+@_ttl_cache_fn(12.0)
 def get_multichain_detail() -> dict:
     """Extended L2/WARP ops detail for the Multichain tab.
 
@@ -9270,10 +9382,17 @@ def get_multichain_detail() -> dict:
     warp_alive = check_port_open(host, 8453, timeout=1.5)
     out["api_alive"] = check_port_open(host, api_port, timeout=1.0)
 
-    btc_list = fetch_service_json(host, api_port, "/v1/multichain/swaps/btc/list", timeout=2.0) or {}
-    btc_metrics = fetch_service_json(host, api_port, "/v1/multichain/swaps/btc/metrics", timeout=2.0) or {}
-    htlc_pending = fetch_service_json(host, api_port, "/v1/multichain/swaps/htlc/pending", timeout=2.0) or {}
-    pools_resp = fetch_service_json(host, api_port, "/v1/swap/pools", timeout=2.0) or {}
+    # Four independent upstream calls — run them together, sequentially they
+    # cost up to 8 s and the tab's first paint timed out (2026-11-18).
+    _paths = (
+        "/v1/multichain/swaps/btc/list",
+        "/v1/multichain/swaps/btc/metrics",
+        "/v1/multichain/swaps/htlc/pending",
+        "/v1/swap/pools",
+    )
+    with ThreadPoolExecutor(max_workers=len(_paths)) as _ex:
+        _res = list(_ex.map(lambda p: fetch_service_json(host, api_port, p, timeout=2.0) or {}, _paths))
+    btc_list, btc_metrics, htlc_pending, pools_resp = _res
 
     out["btc_swap"] = {
         "enabled": bool(btc_list.get("enabled")),
@@ -9324,9 +9443,12 @@ def get_multichain_detail() -> dict:
     out["gates"] = gates
 
     # ── Local pruned bitcoind (WARP BTC backend) ──
-    chain = _bitcoin_rpc("getblockchaininfo")
-    net = _bitcoin_rpc("getnetworkinfo")
-    wallet = _bitcoin_rpc("getwalletinfo", wallet="warpwatch")
+    # Three independent bitcoind RPCs — parallel for the same reason as above.
+    with ThreadPoolExecutor(max_workers=3) as _ex:
+        _f_chain = _ex.submit(_bitcoin_rpc, "getblockchaininfo")
+        _f_net = _ex.submit(_bitcoin_rpc, "getnetworkinfo")
+        _f_wallet = _ex.submit(lambda: _bitcoin_rpc("getwalletinfo", wallet="warpwatch"))
+        chain, net, wallet = _f_chain.result(), _f_net.result(), _f_wallet.result()
     out["bitcoin"] = {
         "available": chain is not None,
         "blocks": chain.get("blocks") if isinstance(chain, dict) else None,
@@ -10045,6 +10167,7 @@ def update_pool_setup_config(payload: dict) -> dict:
     }
 
 
+@_ttl_cache_fn(15.0)
 def get_servers_setup() -> dict:
     """Return server setup, services, disk health, and automation status for the Servers Setup tab."""
     import subprocess, os
@@ -10124,27 +10247,18 @@ def get_servers_setup() -> dict:
     # ── ZION services (Edge deployment units) ──────────────────────
     zion_services = EDGE_SERVICE_ORDER
     services = []
-    for svc in zion_services:
-        try:
-            unit = _EDGE_SYSTEMD_UNITS.get(svc, svc + ".service")
-            r = subprocess.run(
-                ["systemctl", "is-active", unit],
-                capture_output=True, text=True, timeout=5,
-            )
-            status = r.stdout.strip()
-            active = status == "active"
-            services.append({"name": svc, "active": active, "status": status})
-        except Exception:
-            services.append({"name": svc, "active": False, "status": "unknown"})
+    # One `systemctl is-active` call for every unit instead of one per unit:
+    # the per-unit loop cost ~4 s of the ~5 s this handler used to take.
+    _units = [_EDGE_SYSTEMD_UNITS.get(svc, svc + ".service") for svc in zion_services]
+    _active_map = _systemd_active_map(_units)
+    for svc, unit in zip(zion_services, _units):
+        status = _active_map.get(unit, "unknown")
+        services.append({"name": svc, "active": status == "active", "status": status})
     result["services"] = services
 
     # ── Auto-patch status ────────────────────────────────────────────
     def _svc_active(name):
-        try:
-            r = subprocess.run(["systemctl", "is-active", name], capture_output=True, text=True, timeout=5)
-            return r.stdout.strip() == "active"
-        except Exception:
-            return False
+        return _systemd_active_map([name]).get(name, "unknown") == "active"
 
     def _file_exists(path):
         return os.path.exists(path)
@@ -10752,6 +10866,7 @@ def sanitize_pool_stats(pool_stats: dict, miners: list) -> dict:
 
     return pool_stats
 
+@_ttl_cache_fn(8.0)
 def build_payout_status() -> dict:
     """Build comprehensive payout status for the Payout dashboard tab.
     Robust: topology-aware RPC fallbacks, structured payout history, validation, health."""
@@ -12271,6 +12386,23 @@ def background_sampler():
             print(f"[sampler] error: {e}", file=sys.stderr)
         time.sleep(5)
 
+def pool_cache_warmer():
+    """Keep the slow pool aggregates warm.
+
+    /api/pool/overview and /api/pool/blocks fan out to ~25 public pool
+    endpoints (per-coin stats + blocks + payouts) and cost 6-9 s cold, so a
+    user opening the Pool tab used to stare at "Loading…" until the request
+    timed out. Refreshing them slightly before the 30 s TTL expires makes every
+    user-facing request a cache hit (~3 ms) while keeping the data fresh.
+    """
+    while True:
+        time.sleep(30)
+        for fn, args in ((get_pool_overview, ()), (get_pool_blocks, (100,))):
+            try:
+                fn(*args)
+            except Exception as e:  # never kill the warmer
+                print(f"[pool-warmer] {fn.__name__}: {e}", file=sys.stderr)
+
 # ── HTML Dashboard: served from dashboard.html file (not inline) ───
 # HTML_DASHBOARD inline block removed — dashboard.html is the canonical UI.
 
@@ -12772,7 +12904,27 @@ def build_security_status() -> dict:
 # ── HTTP Handler ────────────────────────────────────────────────────────
 
 # Maestro v2.4 CLI binary path (built from V3/L3/ai-native/src/bin/maestro.rs)
-MAESTRO_BIN = "/opt/zion/target/release/maestro"
+def _resolve_bin(env_var: str, candidates) -> str:
+    """First existing path from an env override + candidate list.
+
+    Keeps the dashboard honest about *where* a binary lives instead of pinning a
+    path that a workspace reshuffle silently invalidated (maestro moved from
+    /opt/zion/target/release to /opt/zion/V31/target/release).
+    """
+    override = os.environ.get(env_var)
+    if override and Path(override).exists():
+        return override
+    for cand in candidates:
+        if Path(cand).exists():
+            return str(cand)
+    return str(candidates[0]) if candidates else ""
+
+
+MAESTRO_BIN = _resolve_bin("ZION_MAESTRO_BIN", [
+    "/opt/zion/V31/target/release/maestro",
+    "/opt/zion/target/release/maestro",
+    str(REPO_ROOT / "V31" / "target" / "release" / "maestro"),
+])
 
 
 def _maestro_cli(args: list, timeout: int = 10) -> dict:
@@ -13237,7 +13389,45 @@ class DashboardHandler(BaseHTTPRequestHandler):
             else:
                 self.send_error(404)
                 return
-        elif route in ("/dashboard.js", "/dashboard.min.js"):
+        elif route in ("/nebula.jpg", "/v31/symbol-200x200.png"):
+            # Background/texture assets referenced from dashboard.html CSS and
+            # manifest.json. They were 404ing on every page load (2026-11-18).
+            img = (SCRIPT_DIR / "v31" / "symbol-200x200.png") if route.endswith(".png") else (SCRIPT_DIR / "nebula.jpg")
+            ctype = "image/png" if img.suffix == ".png" else "image/jpeg"
+            if img.exists():
+                body = img.read_bytes()
+                self.send_response(200)
+                self.send_header("Content-Type", ctype)
+                self.send_header("Cache-Control", "public, max-age=604800")
+                self.send_header("ETag", f'"{hashlib.md5(body).hexdigest()}"')
+                self.send_header("Content-Length", str(len(body)))
+                self.end_headers()
+                self.wfile.write(body)
+            else:
+                self.send_error(404)
+            return
+        elif route in ("/dashboard.js", "/dashboard.min.js", "/tailwind.build.css"):
+            if route == "/tailwind.build.css":
+                # Compiled Tailwind (was the runtime CDN: ~400 KB of JS + JIT
+                # compilation on every page load, and it warned "should not be
+                # used in production" in the console).
+                css_path = SCRIPT_DIR / "tailwind.build.css"
+                if css_path.exists():
+                    _ensure_gz_uptodate(css_path, SCRIPT_DIR / "tailwind.build.css.gz")
+                    accepts_gzip = "gzip" in (self.headers.get("Accept-Encoding", "").lower())
+                    body = _get_gz_body(css_path) if accepts_gzip else css_path.read_bytes()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/css; charset=utf-8")
+                    if accepts_gzip:
+                        self.send_header("Content-Encoding", "gzip")
+                        self.send_header("Vary", "Accept-Encoding")
+                    self.send_header("Cache-Control", "public, max-age=604800")
+                    self.send_header("Content-Length", str(len(body)))
+                    self.end_headers()
+                    self.wfile.write(body)
+                else:
+                    self.send_error(404)
+                return
             # Serve the exact file requested — /dashboard.js → dashboard.js,
             # /dashboard.min.js → dashboard.min.js (with .gz when accepted).
             is_min = route == "/dashboard.min.js"
@@ -13357,14 +13547,26 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 with _ur.urlopen(f"{EDGE_AGENT_API_BASE}/api/status", timeout=3.0) as r:
                     self._json(json.loads(r.read()))
             except Exception as ex:
-                self._json({"error": str(ex), "reachable": False})
+                # The standalone zion-edge-agent (port 8767) is not deployed on
+                # this host — rig telemetry lives in the Rigs tab (/api/ops/*).
+                self._json({
+                    "error": str(ex),
+                    "reachable": False,
+                    "deployed": False,
+                    "hint": "edge-agent (8767) není nasazený — rig telemetrie je v záložce Rigs (/api/ops/fleet)",
+                })
         elif route == "/api/edge-agent/telemetry":
             try:
                 import urllib.request as _ur
                 with _ur.urlopen(f"{EDGE_AGENT_API_BASE}/api/telemetry", timeout=3.0) as r:
                     self._json(json.loads(r.read()))
             except Exception as ex:
-                self._json({"error": str(ex), "reachable": False})
+                self._json({
+                    "error": str(ex),
+                    "reachable": False,
+                    "deployed": False,
+                    "hint": "edge-agent (8767) není nasazený — rig telemetrie je v záložce Rigs (/api/ops/fleet)",
+                })
         elif route == "/api/edge/infra":
             # v3.0.4: Edge server doesn't expose a unified API on 8888.
             # Build infra overview from individual service probes instead.
@@ -13421,7 +13623,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
             limit = int(params.get("limit", ["100"])[0])
             self._json(get_pool_blocks(limit=limit))
         elif route == "/api/pool/overview":
-            self._json(get_pool_overview())
+            _ov = get_pool_overview()
+            if not (_ov or {}).get("coins"):
+                # A transient pool hiccup must not pin an empty shell in the
+                # 8 s TTL cache — recompute once, uncached.
+                _ov = getattr(get_pool_overview, "__wrapped__", get_pool_overview)()
+            self._json(_ov)
         elif route == "/api/zis":
             zis_h = fetch_service_json("127.0.0.1", 8096, "/health", timeout=2.5)
             self._json({
@@ -13883,25 +14090,50 @@ class DashboardHandler(BaseHTTPRequestHandler):
                 # Return empty list with offline flag — no error thrown
                 self._json({"ok": False, "agents": [], "count": 0, "offline": True, "error": str(e)[:80]})
         elif route == "/api/metrics/scrape":
-            # Scrape Prometheus-format metrics from node/pool
+            # Scrape Prometheus-format metrics from a ZION exporter.
+            # `svc` may be a legacy alias (node1/node2/pool/miner) or any
+            # service id from the registry. Previously every unknown id fell
+            # back to port 9115 (nothing listens there) so the whole Metrics
+            # tab reported "connection refused" (2026-11-18).
             svc = params.get("svc", ["node1"])[0].strip()
-            port_map = {"node1": 9115, "node2": 9116, "pool": 9100, "miner": 9200}
-            port = port_map.get(svc, 9115)
+            alias_ports = {
+                "node1": 9100,   # prometheus-node-exporter
+                "node2": 9106,   # v31 node2 follower metrics
+                "node3": 9455,   # v31 node3 follower metrics
+                "pool": 8080,    # pool API exposes /metrics
+                "miner": 9101,
+                "g8": 9105,
+            }
+            port = alias_ports.get(svc)
+            if port is None:
+                entry = get_service(svc) or {}
+                ports = entry.get("ports") or {}
+                port = ports.get("metrics") or ports.get("api")
+            if port is None:
+                self._json({
+                    "ok": False,
+                    "svc": svc,
+                    "no_metrics": True,
+                    "error": f"service '{svc}' exposes no metrics port",
+                })
+                return
             try:
-                import urllib.request as _ur
-                with _ur.urlopen(f"http://127.0.0.1:{port}/metrics", timeout=3) as r:
+                with urllib.request.urlopen(f"http://127.0.0.1:{port}/metrics", timeout=4) as r:
                     raw = r.read().decode("utf-8", errors="ignore")
-                # Parse key metrics
                 lines = [l for l in raw.splitlines() if l and not l.startswith("#")]
                 parsed = {}
-                for ln in lines[:200]:
+                for ln in lines[:400]:
                     parts = ln.rsplit(" ", 1)
                     if len(parts) == 2:
-                        try: parsed[parts[0]] = float(parts[1])
-                        except ValueError: pass
-                self._json({"ok": True, "svc": svc, "port": port, "metrics": parsed, "raw_lines": len(lines)})
+                        try:
+                            parsed[parts[0]] = float(parts[1])
+                        except ValueError:
+                            pass
+                self._json({"ok": True, "svc": svc, "port": port,
+                            "metrics": parsed, "raw_lines": len(lines)})
             except Exception as e:
-                self._json({"ok": False, "svc": svc, "port": port, "offline": True, "error": str(e)[:80]})
+                self._json({"ok": False, "svc": svc, "port": port,
+                            "offline": True, "error": str(e)[:120]})
         elif route == "/api/metrics/collector":
             # Read metrics.json written by Rust metrics collector
             metrics_path = DATA_DIR / "metrics.json"
@@ -13913,7 +14145,12 @@ class DashboardHandler(BaseHTTPRequestHandler):
                     data["_file_age_sec"] = int(time.time() - metrics_path.stat().st_mtime)
                     self._json(data)
                 else:
-                    self._json({"ok": False, "error": "metrics.json not found. Run: cargo run --release --manifest-path dashboard/metrics-collector/Cargo.toml"})
+                    self._json({
+                        "ok": False,
+                        "deployed": False,
+                        "hint": "Rust metrics-collector není nasazený — živá data jsou v /api/metrics/scrape a Grafaně",
+                        "error": "metrics.json not found",
+                    })
             except Exception as e:
                 self._json({"ok": False, "error": str(e)})
         elif route == "/api/topology":
@@ -14072,13 +14309,39 @@ class DashboardHandler(BaseHTTPRequestHandler):
             # Maestro v2.4 — probe 26 services health matrix
             self._json(_maestro_cli(["health"]))
         elif route == "/api/hiran/health":
-            # Quick health probe of Hiran inference server
-            try:
-                import urllib.request as _ur
-                with _ur.urlopen("http://127.0.0.1:8002/health", timeout=2) as r:
-                    self._json({"ok": True, "status": "online", "data": json.loads(r.read())})
-            except Exception as e:
-                self._json({"ok": False, "status": "offline", "error": str(e)[:80]})
+            # Hiran LLM probe. Primary = operator PC via reverse tunnel on
+            # 127.0.0.1:8002; fallback = EDGE2 CPU llama.cpp reached over the
+            # chain tunnel on 127.0.0.1:8005 (added 2026-11-18). Reporting a
+            # bare "connection refused" when the PC is simply off made the
+            # card look broken even though the fallback backend was serving.
+            import urllib.request as _ur
+            candidates = [
+                ("pc-tunnel", "http://127.0.0.1:8002"),
+                ("edge2-cpu-fallback", "http://127.0.0.1:8005"),
+                ("local", "http://127.0.0.1:8071"),
+            ]
+            tried = []
+            for label, url in candidates:
+                try:
+                    with _ur.urlopen(url + "/health", timeout=2) as r:
+                        payload = json.loads(r.read())
+                    self._json({
+                        "ok": True,
+                        "status": "online",
+                        "backend": label,
+                        "endpoint": url,
+                        "data": payload,
+                        "tried": tried,
+                    })
+                    return
+                except Exception as e:
+                    tried.append({"backend": label, "endpoint": url, "error": str(e)[:80]})
+            self._json({
+                "ok": False,
+                "status": "offline",
+                "tried": tried,
+                "hint": "PC inference tunnel (8002) and EDGE2 CPU fallback (8005) both unreachable",
+            })
         elif route == "/api/hiranyagarbha/health":
             # Quick health probe of Hiranyagarbha orchestrator
             try:
@@ -14104,12 +14367,14 @@ class DashboardHandler(BaseHTTPRequestHandler):
             self._json({"ok": alive, "service": "swap-aggregator", "port": 8456,
                         "status": "online" if alive else "offline"})
         elif route == "/api/swap-aggregator/swaps":
-            try:
-                import urllib.request as _ur
-                with _ur.urlopen("http://127.0.0.1:8456/swaps", timeout=3.0) as r:
-                    self._json(json.loads(r.read()))
-            except Exception as e:
-                self._json({"ok": False, "offline": True, "error": str(e)[:120]})
+            # warpd exposes only /health today — it has no /swaps route, so
+            # probing it produced a scary "HTTP Error 404" card. Report the
+            # capability gap explicitly instead of pretending it is a failure.
+            self._json({
+                "ok": False,
+                "unsupported": True,
+                "note": "warpd (127.0.0.1:8454) neexponuje /swaps — swap historie zatím není dostupná přes API",
+            })
         elif route == "/api/swap/initiate":
             self._json({"ok": False, "error": "Swap initiation requires POST — use POST /api/swap/initiate"})
         elif route == "/api/warp/health":
@@ -14700,6 +14965,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
             q = params.get("q", [""])[0].strip()
             h = params.get("height", [""])[0].strip()
             hash_hex = params.get("hash", [""])[0].strip()
+            if not (q or h or hash_hex):
+                self._json({
+                    "found": False,
+                    "error": "missing parameter",
+                    "hint": "použij ?height=<n>, ?hash=<hex> nebo ?q=<height|hash>",
+                })
+                return
             if q:
                 if q.isdigit():
                     self._json(get_block_detail(height=int(q)))
@@ -15565,7 +15837,13 @@ class DashboardHandler(BaseHTTPRequestHandler):
             use_hiran = params.get("hiran", ["auto"])[0]
             poc_sim_path = SCRIPT_DIR / ".." / ".." / "PoC-lab" / "target" / "debug" / "poc-sim"
             if not poc_sim_path.exists():
-                self._json({"ok": False, "error": "poc-sim binary not found. Run: cargo build -p poc-sim"})
+                # PoC-lab is archived (research prototype, not deployed on EDGE).
+                self._json({
+                    "ok": False,
+                    "unsupported": True,
+                    "error": "poc-sim není na tomto hostu nasazený (PoC-lab je archivovaný výzkumný prototyp)",
+                    "hint": "build: cargo build -p poc-sim v archive/PoC-lab",
+                })
                 return
             # Check Hiran availability
             hiran_online = False
@@ -16655,6 +16933,7 @@ if __name__ == "__main__":
     # Records service health history every 5 min for the Health Timeline.
     sampler_thread = threading.Thread(target=background_sampler, daemon=True)
     sampler_thread.start()
+    threading.Thread(target=pool_cache_warmer, daemon=True).start()
 
     # Ensure pre-compressed static files are fresh before the first request.
     _ensure_gz_uptodate(SCRIPT_DIR / "dashboard.html", SCRIPT_DIR / "dashboard.html.gz", min_interval=0.0)

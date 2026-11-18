@@ -109,8 +109,10 @@ function copyToClipboard(text){
 // avoid redundant server work during heavy refresh cycles.
 const _API_CACHE = new Map();
 const _API_CACHE_TTL_MS = 1500;
+const _API_INFLIGHT = new Map();   // identical concurrent GETs share one request
+const API_TIMEOUT_MS = 25000;      // slow aggregates (pool overview, explorer) run 5-12 s
 
-async function apiFetch(url, opts={}, timeoutMs=8000){
+async function apiFetch(url, opts={}, timeoutMs=API_TIMEOUT_MS){
   const method = (opts.method || 'GET').toUpperCase();
   const key = method + ' ' + url;
   const now = Date.now();
@@ -120,20 +122,30 @@ async function apiFetch(url, opts={}, timeoutMs=8000){
     if(cached && now - cached.ts < _API_CACHE_TTL_MS){
       return cached.data;
     }
+    // Same URL already in flight → share its promise instead of stacking a
+    // second identical request (explorer/payout/services were fetched 3-6x
+    // per page load).
+    const inflight = _API_INFLIGHT.get(key);
+    if(inflight) return inflight;
   }
-  const ctrl = new AbortController();
-  const tid = setTimeout(() => ctrl.abort(), timeoutMs);
-  try {
-    const res = await fetch(url, { ...opts, signal: ctrl.signal, credentials: 'same-origin' });
-    if(!res.ok) throw new Error('HTTP ' + res.status + ' on ' + url);
-    const data = await res.json();
-    if(useCache){
-      _API_CACHE.set(key, { data, ts: now });
+  const run = (async () => {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { ...opts, signal: ctrl.signal, credentials: 'same-origin' });
+      if(!res.ok) throw new Error('HTTP ' + res.status + ' on ' + url);
+      const data = await res.json();
+      if(useCache){
+        _API_CACHE.set(key, { data, ts: Date.now() });
+      }
+      return data;
+    } finally {
+      clearTimeout(tid);
+      if(useCache) _API_INFLIGHT.delete(key);
     }
-    return data;
-  } finally {
-    clearTimeout(tid);
-  }
+  })();
+  if(useCache) _API_INFLIGHT.set(key, run);
+  return run;
 }
 
 // Debounce utility for expensive refresh calls
@@ -213,6 +225,21 @@ function clearTabTimers(except){
   clearInterval(_v31LogTimer); _v31LogTimer = null;
 }
 
+// Run independent loaders with a small stagger. The dashboard backend is a
+// single Python process where many handlers do blocking subprocess/HTTP work,
+// so firing 10+ requests at once made each of them exceed its own client
+// timeout (ERR_ABORTED storms on 2026-11-18).
+function queueLoads(tasks, spacing = 120){
+  let i = 0;
+  const step = () => {
+    if(i >= tasks.length) return;
+    const task = tasks[i++];
+    try { Promise.resolve(task()).catch(() => {}); } catch (e) { /* never break the queue */ }
+    setTimeout(step, spacing);
+  };
+  step();
+}
+
 function switchTab(name){
   currentTab = name;
   TABS.forEach(t => {
@@ -238,7 +265,7 @@ function switchTab(name){
   }
 
   // ── Auto-refresh timers ─────────────────────────────────────────────
-  if(name === 'overview'){ loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); updateTopWallets(); updateBlockRewardBreakdown(); updateNetworkGrowth(); updateMinerLeaderboard(); updatePoolConnectionHistory(); updateDifficultyForecast(); loadMaintStatus(); }
+  if(name === 'overview'){ queueLoads([loadMempool, loadMonitoringStatus, updateChainStats, updateRecentBlocks, updateTopWallets, updateBlockRewardBreakdown, updateNetworkGrowth, updateMinerLeaderboard, updatePoolConnectionHistory, updateDifficultyForecast, loadMaintStatus]); }
   if(name === 'alerts'){ clearTabTimers('alerts'); loadAlertHistory(); if(!_alertsTimer) _alertsTimer = setInterval(loadAlertHistory, 8000); }
   else if(name === 'services'){ clearTabTimers('services'); loadServices(); if(!_servicesTimer) _servicesTimer = setInterval(loadServices, 5000); }
   else if(name === 'nodes'){ clearTabTimers('nodes'); renderAllNodes(); loadCliNodeStatus(); if(!_nodesTimer) _nodesTimer = setInterval(()=>{renderAllNodes(); loadCliNodeStatus();}, 6000); }
@@ -411,7 +438,7 @@ async function refreshAll(){
       if(currentTab === 'wallets') { loadWallets(); }
       if(currentTab === 'explorer') loadExplorer();
       if(currentTab === 'hiran') loadAiStatus();
-      if(currentTab === 'overview') { loadMempool(); loadMonitoringStatus(); updateChainStats(); updateRecentBlocks(); updateTopWallets(); updateBlockRewardBreakdown(); updateNetworkGrowth(); updateMinerLeaderboard(); updateDifficultyForecast(); refreshReadiness(); }
+      if(currentTab === 'overview') { queueLoads([loadMempool, loadMonitoringStatus, updateChainStats, updateRecentBlocks, updateTopWallets, updateBlockRewardBreakdown, updateNetworkGrowth, updateMinerLeaderboard, updateDifficultyForecast, refreshReadiness]); }
       if(currentTab === 'controls') { loadMinerPerformance(); loadDepGraphControls(); }
       if(currentTab === 'nodes') renderAllNodes();
 
@@ -1507,7 +1534,7 @@ async function updateServiceTelemetryDetails(s){
   // Fetch live service data from local /api/services (replaces old 62.171.141.136:8888 fetch)
   let svcList = [];
   try {
-    const svcRes = await fetch('/api/services', { signal: AbortSignal.timeout(5000) }).then(r => r.json());
+    const svcRes = await fetch('/api/services', { signal: AbortSignal.timeout(20000) }).then(r => r.json());
     svcList = svcRes.services || [];
   } catch(e) {
     console.warn('Service list fetch failed:', e);
@@ -3423,7 +3450,7 @@ function _fmtAmt(a){
 async function loadPoolOverview(){
   const badge = document.getElementById('pool-ov-badge');
   try{
-    const d = await fetch('/api/pool/overview', {signal: AbortSignal.timeout(12000)}).then(r => r.json());
+    const d = await fetch('/api/pool/overview', {signal: AbortSignal.timeout(25000)}).then(r => r.json());
     if(!d.ok) throw new Error(d.error || 'pool overview failed');
     const s = d.summary || {};
     const set = (id,v) => { const el = document.getElementById(id); if(el) el.textContent = v; };
@@ -7391,6 +7418,10 @@ async function loadMetricsCollector(){
   try{
     const res = await fetch('/api/metrics/collector').then(r => r.json());
     if(res.error || res.ok === false){
+      if(res.deployed === false){
+        container.innerHTML = '<div class="text-gray-400 text-xs">Rust collector není na tomto hostu nasazený — ' + escapeHtml(res.hint || '') + '</div>';
+        return;
+      }
       container.innerHTML = '<div class="text-amber-400 text-xs">Rust collector offline — ' + escapeHtml(res.error || 'unknown') + '</div>';
       return;
     }

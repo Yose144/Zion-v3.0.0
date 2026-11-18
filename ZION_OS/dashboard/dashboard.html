@@ -16,18 +16,10 @@
 <link rel="preconnect" href="https://dashboard.zionterranova.com">
 <link rel="preconnect" href="https://rpc.zionterranova.com">
 <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
-<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/tailwind.build.css?v=1">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" defer></script>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
-<script>
-tailwind.config={theme:{extend:{colors:{
-  'zion-gold':'rgb(252 209 22 / <alpha-value>)',
-  'zion-purple':'rgb(228 30 43 / <alpha-value>)',
-  'zion-cyan':'rgb(7 137 48 / <alpha-value>)',
-  'zion-blue':'rgb(30 58 138 / <alpha-value>)',
-}}}};
-</script>
 <style>
 :root{
   --color-zion-gold:252 209 22;
@@ -8855,7 +8847,7 @@ BTCUNLOCK_COORD_TOKEN=&lt;token&gt; python3 BTCunlock/btcunlock-worker.py \
   </div>
 </div>
 
-<script src="/dashboard.js?v=132" defer></script>
+<script src="/dashboard.js?v=134" defer></script>
 <script>
 // ═══ Supported AuxPoW coin tickers (keep in sync with app.py AUXPOW_SUPPORTED_COINS) ═══
 const STREAM_COIN_TICKERS = [
